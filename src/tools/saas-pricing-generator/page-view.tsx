@@ -1,5 +1,6 @@
 import sections from "../../components/page-sections.module.css";
 import { SourceLink } from "../../components/source-link";
+import { REPO_URL } from "../../lib/site";
 import { pricingToolCopy as copy } from "./copy";
 import { SaasPricingGenerator } from "./tool";
 import styles from "./page-view.module.css";
@@ -7,7 +8,7 @@ import styles from "./page-view.module.css";
 /**
  * Page composition for /saas-pricing-generator: hero, the interactive
  * editor (itself SSR-rendered; it needs JS to edit), explainer sections,
- * and the supastack attribution CTA.
+ * and the GitHub contribute CTA.
  */
 export function PricingToolPageView() {
   return (
@@ -40,7 +41,7 @@ export function PricingToolPageView() {
       <aside className={sections.articleCta}>
         <h2>{copy.cta.title}</h2>
         <p>{copy.cta.body}</p>
-        <a href="https://supastack.dev" target="_blank" rel="noopener noreferrer" data-cta="tool-pricing">
+        <a href={REPO_URL} target="_blank" rel="noopener noreferrer">
           {copy.cta.button}
         </a>
       </aside>

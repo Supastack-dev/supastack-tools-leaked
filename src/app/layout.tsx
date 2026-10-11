@@ -14,7 +14,6 @@ export const metadata: Metadata = {
   },
   description:
     "Free browser tools for SaaS builders: a pricing page generator, a Supabase RLS policy generator, an i18n key checker, and a live theme playground. Open source, MIT licensed.",
-  metadataBase: new URL("https://github.com/Learnmore-smart/supastack-tools"),
 };
 
 export const viewport: Viewport = {

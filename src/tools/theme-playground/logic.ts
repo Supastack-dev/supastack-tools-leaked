@@ -105,7 +105,7 @@ export function nextPackIndex(
 }
 
 /**
- * Clipboard payload — the attribute(s) a buyer would paste onto a wrapper.
+ * Clipboard payload — the attribute(s) to paste onto a wrapper.
  * Non-default axis picks come along so the pasted snippet reproduces the
  * preview exactly.
  */

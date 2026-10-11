@@ -1,6 +1,7 @@
 import { MonitorSmartphone, SwatchBook } from "lucide-react";
 
 import { SourceLink } from "../../components/source-link";
+import { REPO_URL } from "../../lib/site";
 import { copy } from "./copy";
 import { ThemePlayground } from "./tool";
 import styles from "./tool.module.css";
@@ -30,8 +31,7 @@ export function ThemePlaygroundPageView() {
         <p>{copy.ctaBody}</p>
         <a
           className={styles.ctaButton}
-          data-cta="tool-theme"
-          href="https://supastack.dev"
+          href={REPO_URL}
           target="_blank"
           rel="noopener noreferrer"
         >

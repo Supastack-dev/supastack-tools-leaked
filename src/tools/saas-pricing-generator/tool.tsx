@@ -375,7 +375,7 @@ export function SaasPricingGenerator() {
           </h2>
 
           <div className={styles.field}>
-            <span className={styles.fieldLabel} id="pricing-currency-label">
+            <span className={styles.fieldLabel}>
               {copy.controls.currency}
             </span>
             <FormSelect<PricingCurrency>

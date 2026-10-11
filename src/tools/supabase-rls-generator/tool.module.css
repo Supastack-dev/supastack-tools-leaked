@@ -1,6 +1,6 @@
-/* Tool page + generator — marketing tokens only (--accent/--text/--muted/
-   --page/--section/--raised/--border/--ease/--radius-*), light packs repaint
-   via the shared marketing-theme mechanism. */
+/* Tool page + generator — shared design tokens only (--accent/--text/
+   --muted/--page/--section/--raised/--border/--ease/--radius-*); theme
+   packs repaint via the subtree [data-theme] mechanism. */
 
 .page {
   margin: 0 auto;

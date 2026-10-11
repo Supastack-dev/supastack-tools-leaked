@@ -12,7 +12,6 @@ export const pricingToolCopy = {
   h1: "Free SaaS pricing page generator",
   lead: "Design the pricing table your product deserves — tier names, monthly and annual prices, a featured plan, and feature lists — and watch it render exactly as customers will see it. Copy the config JSON when it converts.",
   nojsNote: "The live editor needs JavaScript. The advice below works either way.",
-  sourceLabel: "Source on GitHub",
 
   controls: {
     heading: "Configure",
@@ -90,8 +89,8 @@ export const pricingToolCopy = {
   ] as const,
 
   cta: {
-    title: "Ship this pricing page tonight",
-    body: "The table you just designed needs checkout, subscriptions, and entitlements behind it — supastack includes the billing plumbing, so your prices can start charging real customers.",
-    button: "Get supastack",
+    title: "Star it or send a pull request",
+    body: "This generator is MIT-licensed open source — fork it, file an issue, or contribute the pricing features you want to see next.",
+    button: "View on GitHub",
   },
 } as const;

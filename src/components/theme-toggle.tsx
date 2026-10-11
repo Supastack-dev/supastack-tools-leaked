@@ -16,6 +16,9 @@ export function ThemeToggle() {
     const next: SiteTheme =
       document.documentElement.dataset.theme === "light" ? "dark" : "light";
     document.documentElement.dataset.theme = next;
+    // The boot script sets colorScheme inline — a stale inline value would
+    // outrank the stylesheet's [data-theme] color-scheme rule.
+    document.documentElement.style.colorScheme = next;
     try {
       localStorage.setItem(SITE_THEME_STORAGE_KEY, next);
     } catch {

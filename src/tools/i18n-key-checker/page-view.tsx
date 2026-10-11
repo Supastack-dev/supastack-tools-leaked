@@ -2,6 +2,7 @@ import { ArrowUpRight } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { SourceLink } from "../../components/source-link";
+import { REPO_URL } from "../../lib/site";
 import { copy } from "./copy";
 import { I18nKeyCheckerTool } from "./tool";
 import styles from "./tool.module.css";
@@ -36,7 +37,7 @@ export function PageView() {
       <section className={styles.cta} aria-labelledby="i18n-tool-cta">
         <h2 id="i18n-tool-cta">{copy.cta.heading}</h2>
         <p>{copy.cta.body}</p>
-        <a href="https://supastack.dev" target="_blank" rel="noopener noreferrer" data-cta="tool-i18n">
+        <a href={REPO_URL} target="_blank" rel="noopener noreferrer">
           {copy.cta.label}
           <ArrowUpRight size={14} aria-hidden />
         </a>

@@ -2,7 +2,7 @@
   width: 100%;
   max-width: var(--max);
   margin: 0 auto;
-  padding: 64px var(--gutter) 96px;
+  padding: calc(var(--header-h) + 48px) var(--gutter) 96px;
   flex: 1;
 }
 

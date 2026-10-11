@@ -8,9 +8,9 @@ database, no env vars — every tool runs client-side.
 ## Hard rules
 
 - **No `@supastack/*` code.** This is a public repo. Do not import supastack
-  packages and do not copy code from any supastack/starterkit repo beyond
-  the tool files already here. (The README credits the source — that's
-  attribution, not code reuse.)
+  packages and do not copy code from the source storefront beyond the tool
+  files already here. (The README credits the source — that's attribution,
+  not code reuse.)
 - **Windows/Git Bash: never redirect to `NUL`.** Under bash, `cmd > NUL` or
   `2>NUL` creates a REAL file named `NUL` that Windows cannot delete. Use
   `/dev/null` instead. To remove an existing `NUL` file:

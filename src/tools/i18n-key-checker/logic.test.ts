@@ -422,12 +422,13 @@ describe("I18nKeyCheckerTool", () => {
 });
 
 describe("PageView", () => {
-  it("server-renders the CTA as a link and includes the noscript note", async () => {
+  it("server-renders the GitHub CTA as a link and includes the noscript note", async () => {
     const { renderToStaticMarkup } = await import("react-dom/server");
     const { PageView } = await import("./page-view");
+    const { REPO_URL } = await import("../../lib/site");
     const html = renderToStaticMarkup(createElement(PageView));
     expect(html).toContain("<noscript>");
-    expect(html).toContain('href="https://supastack.dev"');
-    expect(html).toContain('data-cta="tool-i18n"');
+    expect(html).toContain(`href="${REPO_URL}"`);
+    expect(html).not.toContain("data-cta");
   });
 });

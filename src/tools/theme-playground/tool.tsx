@@ -36,10 +36,10 @@ const NAV_ICONS = [LayoutDashboard, BarChart3, Users, CreditCard, Settings] as c
 const COPY_RESET_MS = 1600;
 
 /**
- * Live preview of the kit's theme system. The pack/axis picks repaint ONLY
+ * Live preview of the theme-pack system. The pack/axis picks repaint ONLY
  * the preview wrapper via the subtree `data-theme` contract — the visitor's
- * global html[data-theme] and its localStorage/cookie persistence are never
- * touched, so the marketing page around the tool keeps their pick.
+ * global html[data-theme] and its localStorage persistence are never
+ * touched, so the page around the tool keeps their pick.
  */
 export function ThemePlayground() {
   const [themeId, setThemeId] = useState<ThemeId>(DEFAULT_THEME_ID);

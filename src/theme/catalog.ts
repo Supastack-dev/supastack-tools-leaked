@@ -1,8 +1,4 @@
-import { uiPresetBootFragment } from "./presets";
-
 export const DEFAULT_THEME_ID = "obsidian";
-export const THEME_STORAGE_KEY = "starterkit-theme";
-export const THEME_COOKIE_NAME = "starterkit-theme";
 
 export const THEME_TOKEN_NAMES = [
   "--page",
@@ -291,59 +287,10 @@ export const THEME_CATALOG: readonly ThemeDefinition[] = [
 
 export type ThemeId = (typeof THEME_CATALOG)[number]["id"];
 
-export function isThemeId(value: string): boolean {
-  return THEME_CATALOG.some((theme) => theme.id === value);
-}
-
 export function resolveThemeId(value: string | null | undefined): ThemeId {
   return THEME_CATALOG.some((theme) => theme.id === value) ? (value as ThemeId) : DEFAULT_THEME_ID;
 }
 
 export function themeById(id: string): ThemeDefinition {
   return THEME_CATALOG.find((theme) => theme.id === resolveThemeId(id)) ?? obsidian;
-}
-
-export function themeStylesheet(): string {
-  return THEME_CATALOG.map((theme) => {
-    // Default pack only before data-theme exists — never keep painting Obsidian under Paper.
-    // Packs also paint subtree wrappers ([data-theme] on any element), so marketing shells
-    // or nested app surfaces can pin a different pack than the global html pick.
-    const selector =
-      theme.id === DEFAULT_THEME_ID
-        ? `:root:not([data-theme]), html[data-theme="${theme.id}"], [data-theme="${theme.id}"]:not(html)`
-        : `html[data-theme="${theme.id}"], [data-theme="${theme.id}"]:not(html)`;
-    const decls = [
-      ...THEME_TOKEN_NAMES.map((name) => `${name}:${theme.tokens[name]}`),
-      `color-scheme:${theme.colorScheme}`,
-    ].join(";");
-    return `${selector}{${decls}}`;
-  }).join("");
-}
-
-export function applyTheme(id: string): ThemeId {
-  const resolved = resolveThemeId(id);
-  if (typeof document === "undefined") {
-    return resolved;
-  }
-  const pack = themeById(resolved);
-  document.documentElement.dataset.theme = resolved;
-  document.documentElement.style.colorScheme = pack.colorScheme;
-  // Storage can be disabled (webview/privacy mode) — persistence is
-  // best-effort and must not abort the apply; data-theme is already set.
-  try {
-    localStorage.setItem(THEME_STORAGE_KEY, resolved);
-  } catch {
-    // The session-only theme still applies; nothing else to do.
-  }
-  try {
-    document.cookie = `${THEME_COOKIE_NAME}=${encodeURIComponent(resolved)}; Path=/; Max-Age=31536000; SameSite=Lax`;
-  } catch {
-    // Cookie persistence is the SSR/boot fallback — skip when unavailable.
-  }
-  return resolved;
-}
-
-/** Pure boot-script builder. The server-only module re-exports the evaluated string for layout injection. */
-export function buildThemeBootScript(): string {
-  return `(function(){try{var allowed=${JSON.stringify(THEME_CATALOG.map((theme) => theme.id))};var schemes=${JSON.stringify(Object.fromEntries(THEME_CATALOG.map((theme) => [theme.id, theme.colorScheme])))};var key=${JSON.stringify(THEME_STORAGE_KEY)};var prefix=${JSON.stringify(`${THEME_COOKIE_NAME}=`)};var cookie=document.cookie.split("; ").find(function(part){return part.indexOf(prefix)===0});var raw=localStorage.getItem(key)||(cookie?decodeURIComponent(cookie.slice(prefix.length)):"");var id=allowed.indexOf(raw)>=0?raw:${JSON.stringify(DEFAULT_THEME_ID)};document.documentElement.setAttribute("data-theme",id);document.documentElement.style.colorScheme=schemes[id];${uiPresetBootFragment()}}catch(e){}})();`;
 }

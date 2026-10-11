@@ -27,7 +27,7 @@
   outline-offset: 2px;
 }
 
-/* Dark theme (default): show the sun — the action flips to light. */
+/* Dark theme (default): show the moon — the icon reflects the active theme. */
 .iconLight {
   display: none;
 }

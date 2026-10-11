@@ -1,7 +1,7 @@
 /* i18n key checker — tool + landing sections.
-   Tokens only. Severity palette: --critical (parse/missing) follows the
-   toast.module.css precedent of a semantic red mixed toward --text so it
-   survives theme packs; warning rides --telemetry; info rides --muted. */
+   Tokens only. Severity palette: --critical (parse/missing) is a semantic
+   red mixed toward --text so it survives theme packs; warning rides
+   --severity; info rides --muted. */
 
 .page {
   width: 100%;
@@ -309,9 +309,9 @@ main .hero h1 {
 }
 
 .chips li[data-severity="warning"] {
-  color: var(--telemetry);
-  background: var(--telemetry-soft);
-  border-color: color-mix(in srgb, var(--telemetry) 38%, var(--border));
+  color: var(--severity);
+  background: var(--severity-soft);
+  border-color: color-mix(in srgb, var(--severity) 38%, var(--border));
 }
 
 .chips li[data-severity="info"] {
@@ -358,7 +358,7 @@ main .hero h1 {
 }
 
 .group summary[data-severity="warning"] > svg {
-  color: var(--telemetry);
+  color: var(--severity);
 }
 
 .group summary[data-severity="info"] > svg {
@@ -461,7 +461,7 @@ main .explainer h2 {
   padding: 1px 5px;
 }
 
-/* CTA card — mirrors the .articleCta pattern in resources.module.css. */
+/* CTA card — mirrors the .articleCta pattern in page-sections.module.css. */
 .cta {
   margin-top: 72px;
   padding: clamp(32px, 5vw, 52px) 24px;

@@ -11,6 +11,7 @@ import {
 import type { ReactNode } from "react";
 
 import { SourceLink } from "../../components/source-link";
+import { REPO_URL } from "../../lib/site";
 import { copy } from "./copy";
 import { RLS_PRESETS, type RlsPresetId } from "./logic";
 import { RlsGeneratorTool } from "./tool";
@@ -78,8 +79,7 @@ export function PageView() {
         <p>{copy.cta.body}</p>
         <a
           className={styles.ctaButton}
-          data-cta="tool-rls"
-          href="https://supastack.dev"
+          href={REPO_URL}
           target="_blank"
           rel="noopener noreferrer"
         >

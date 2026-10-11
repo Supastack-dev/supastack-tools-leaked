@@ -115,7 +115,7 @@ export function I18nKeyCheckerTool() {
       if (copyTimer.current) clearTimeout(copyTimer.current);
       copyTimer.current = setTimeout(() => setCopyState("idle"), COPY_RESET_MS);
     };
-    if (!navigator.clipboard) {
+    if (!navigator.clipboard?.writeText) {
       // No Clipboard API (insecure context/old browser) — same honest failure.
       setCopyState("failed");
       done();

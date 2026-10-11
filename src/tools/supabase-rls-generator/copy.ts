@@ -4,10 +4,8 @@ export const copy = {
     "Generate copy-paste-ready Supabase row-level security policies — pick an access preset, toggle operations, and ship correct, commented SQL for Postgres.",
   hero: {
     eyebrow: "Free developer tool",
-    title: "Free Supabase RLS policy generator",
     lede: "Pick how your table should be guarded, toggle the operations, and copy production-ready row-level security SQL — commented, quoted, and ready for the Supabase SQL editor.",
   },
-  sourceLabel: "Source on GitHub",
   tool: {
     controlsTitle: "Configure the policies",
     presetLabel: "Access preset",
@@ -42,10 +40,8 @@ export const copy = {
       "Every generated block enables RLS first and names policies `table_operation_preset`, so re-running the generator produces predictable, reviewable migrations.",
   },
   cta: {
-    title: "Skip the policy debugging entirely",
-    body: "supastack ships auth + Postgres wired correctly out of the box — sign-in, sessions and RLS-ready data access are already in place when you clone it.",
-    button: "Get supastack",
+    title: "Star it or send a pull request",
+    body: "The generator is MIT-licensed open source — fork the repo, file an issue, or contribute a preset the community is missing.",
+    button: "View on GitHub",
   },
 } as const;
-
-export type ToolCopy = typeof copy;

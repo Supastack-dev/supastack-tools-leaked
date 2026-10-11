@@ -1,5 +1,5 @@
-/* Page composition for /tools/saas-pricing-generator — hero, tool, explainer
-   prose (resources.module.css .prose) and the CTA card. */
+/* Page composition for /saas-pricing-generator — hero, tool, explainer
+   prose (page-sections.module.css .prose) and the CTA card. */
 
 .main {
   margin: 0 auto;
@@ -53,55 +53,6 @@
   font-size: 0.8125rem;
 }
 
-/* "Source on GitHub" pill under the lead — the tool is open source (MIT). */
-.sourceLink {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 22px;
-  padding: 8px 16px;
-  border: 1px solid var(--border-strong);
-  border-radius: 999px;
-  color: var(--text);
-  font-size: 0.8125rem;
-  font-weight: 500;
-  text-decoration: none;
-  transition:
-    border-color 150ms,
-    color 150ms,
-    background-color 150ms;
-}
-
-.sourceLink svg {
-  color: var(--muted);
-  transition: color 150ms;
-}
-
-.sourceLink:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.sourceLink:hover svg {
-  color: var(--accent);
-}
-
-.sourceLink:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
-}
-
-/* Testimonials ships page-level padding for the homepage; inside the tool
-   column we trim the gutter + bottom pad so the CTA margin owns the gap. */
-.testimonials {
-  margin-top: 80px;
-}
-
-.testimonials section {
-  padding-inline: 0;
-  padding-bottom: 0;
-}
-
 .learn {
   max-width: 760px;
   margin: 80px auto 0;
@@ -121,15 +72,5 @@
   }
   .learn {
     margin-top: 56px;
-  }
-  .testimonials {
-    margin-top: 60px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .sourceLink,
-  .sourceLink svg {
-    transition: none;
   }
 }

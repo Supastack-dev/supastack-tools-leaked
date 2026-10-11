@@ -1,7 +1,6 @@
 /**
  * English copy for the i18n key coverage checker. Tool internals stay
- * English-first (documented plan decision); page chrome localizes through
- * ResourceShell. The /tools hub card lives in `../tools-index.ts`.
+ * English-first; the hub card on the index page lives in `../index.ts`.
  */
 
 const exampleBase = {
@@ -38,7 +37,6 @@ export const copy = {
   heroTitle: "Free i18n translation coverage checker",
   heroIntro:
     "Paste your base locale and the locale you are shipping. The diff runs entirely in your browser — every missing key, stray extra, type change, and dropped {placeholder} variable is listed before it reaches your users.",
-  sourceLabel: "Source on GitHub",
   labels: {
     tagline: "JSON in · coverage report out",
     base: "Base locale (e.g. en.json)",
@@ -67,32 +65,26 @@ export const copy = {
     categories: {
       missing: {
         label: "Missing keys",
-        hint: "in base, absent from target",
         unit: ["missing key", "missing keys"],
       },
       extra: {
         label: "Extra keys",
-        hint: "in target, absent from base",
         unit: ["extra key", "extra keys"],
       },
       typeMismatch: {
         label: "Type mismatches",
-        hint: "same key, different value type",
         unit: ["type mismatch", "type mismatches"],
       },
       emptyTarget: {
         label: "Empty translations",
-        hint: "target string is blank",
         unit: ["empty value", "empty values"],
       },
       placeholderMismatch: {
         label: "Dropped placeholders",
-        hint: "{var} tokens lost in translation",
         unit: ["dropped placeholder", "dropped placeholders"],
       },
       arrayMismatch: {
         label: "Array length drift",
-        hint: "same key, different item count",
         unit: ["array mismatch", "array mismatches"],
       },
     },
@@ -108,14 +100,14 @@ export const copy = {
     },
     {
       heading: "Run it in CI, not just the browser",
-      body: "Browser diffs are for humans fixing strings. The same check belongs in your test suite: flatten both files, assert the target covers every base key, and fail the build on drift. supastack ships twelve locales wired exactly that way — a completeness test compares every language against English and blocks the release until the diff is empty, so no locale silently trails a release.",
+      body: "Browser diffs are for humans fixing strings. The same check belongs in your test suite: flatten both files, assert the target covers every base key, and fail the build on drift — a completeness test that compares every locale against the base keeps any language from silently trailing a release.",
     },
   ] as const,
   nojsNote:
-    "The live diff needs JavaScript. The guidance below still applies — and the same check runs in the supastack test suite.",
+    "The live diff needs JavaScript. The guidance below still applies — and the same check belongs in your own test suite.",
   cta: {
-    heading: "Ship every locale complete, every release",
-    body: "supastack ships 12 locales with a completeness test that fails the build on drift — plus auth, billing, and deployment already wired.",
-    label: "Get supastack",
+    heading: "Star it or send a pull request",
+    body: "The checker is MIT-licensed open source — fork it, report a bug, or contribute the diff features your localization workflow needs.",
+    label: "View on GitHub",
   },
 } as const;
