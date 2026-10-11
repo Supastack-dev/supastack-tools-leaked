@@ -6,7 +6,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Learnmore-smart/supastack-tools"
+    "url": "https://github.com/Supastack-dev/supastack-tools"
   },
   "scripts": {
     "dev": "next dev",

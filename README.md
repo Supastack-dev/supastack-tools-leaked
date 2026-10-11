@@ -3,7 +3,7 @@
 **Free, open-source tools for SaaS builders.**
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![CI](https://github.com/Learnmore-smart/supastack-tools/actions/workflows/ci.yml/badge.svg)](https://github.com/Learnmore-smart/supastack-tools/actions/workflows/ci.yml)
+[![CI](https://github.com/Supastack-dev/supastack-tools/actions/workflows/ci.yml/badge.svg)](https://github.com/Supastack-dev/supastack-tools/actions/workflows/ci.yml)
 
 Single-purpose browser utilities for the jobs every SaaS rebuilds: pricing
 pages, row level security, translation coverage, and theming. Everything
