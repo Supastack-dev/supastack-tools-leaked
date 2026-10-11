@@ -1,0 +1,40 @@
+/* FormSelect — a native <select> with themed chrome. The wrapper owns the
+   chevron overlay; callers pass field classes through triggerClassName /
+   nativeClassName so the control matches sibling inputs. */
+
+.picker {
+  position: relative;
+  display: block;
+  min-width: 0;
+}
+
+/* Higher specificity than caller field classes so the chevron never sits
+   on top of the option text. */
+.picker .select {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  padding-inline-end: 2.5rem;
+  cursor: pointer;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.select:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.chevron {
+  position: absolute;
+  inset-inline-end: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.picker:focus-within .chevron {
+  color: var(--accent);
+}

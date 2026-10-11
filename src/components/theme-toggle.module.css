@@ -1,0 +1,47 @@
+/* Theme toggle — icon swaps with html[data-theme]; no client state. */
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    color 150ms,
+    border-color 150ms,
+    background-color 150ms;
+}
+
+.toggle:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Dark theme (default): show the sun — the action flips to light. */
+.iconLight {
+  display: none;
+}
+
+:global(html[data-theme="light"]) .iconLight {
+  display: block;
+}
+
+:global(html[data-theme="light"]) .iconDark {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toggle {
+    transition: none;
+  }
+}

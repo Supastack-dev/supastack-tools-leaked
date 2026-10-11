@@ -1,0 +1,112 @@
+/* Shared tool-page blocks — long-form explainer copy (.prose) and the
+   closing CTA card (.articleCta). Tokens only. */
+
+.prose {
+  font-size: 1rem;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+
+.prose section + section {
+  margin-top: 38px;
+}
+
+.prose section[id] {
+  scroll-margin-top: calc(var(--header-h) + 24px);
+}
+
+.prose h2 {
+  font-size: 1.5rem;
+  font-weight: 550;
+  line-height: 1.3;
+  margin: 0 0 18px;
+  letter-spacing: -0.03em;
+}
+
+.prose h2 a {
+  color: var(--text);
+  text-decoration: none;
+  transition: color 150ms;
+}
+
+.prose h2 a:hover,
+.prose h2 a:focus-visible {
+  color: var(--accent);
+}
+
+.prose p {
+  color: var(--content-text);
+  margin: 16px 0 0;
+  text-wrap: pretty;
+}
+
+.prose code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  color: var(--text);
+  background: var(--raised);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 1px 5px;
+}
+
+.articleCta {
+  margin: 68px auto 0;
+  padding: clamp(32px, 5vw, 56px) 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--section);
+  text-align: center;
+}
+
+.articleCta h2 {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 550;
+  line-height: 1.25;
+  margin: 0;
+  text-wrap: balance;
+}
+
+.articleCta p {
+  max-width: 55ch;
+  margin: 12px auto 24px;
+  color: var(--muted);
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+.articleCta a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 20px;
+  border-radius: var(--radius-control);
+  background: var(--accent-fill, var(--accent));
+  color: var(--accent-fill-ink, var(--accent-ink));
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    background-color 150ms,
+    transform 150ms;
+}
+
+.articleCta a:hover,
+.articleCta a:focus-visible {
+  background: var(--accent-fill-hover, var(--accent-hover));
+  transform: translateY(-1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .prose h2 a,
+  .articleCta a {
+    transition: none;
+  }
+
+  .articleCta a:hover,
+  .articleCta a:focus-visible {
+    transform: none;
+  }
+}

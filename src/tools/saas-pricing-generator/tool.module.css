@@ -1,0 +1,652 @@
+/* SaaS pricing generator — controls column left, live preview right.
+   Theme tokens only: works under every visitor-picked pack. */
+
+.tool {
+  display: grid;
+  grid-template-columns: minmax(300px, 420px) minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+
+/* ---------- controls ---------- */
+
+.controls {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.settingsCard,
+.tierEditor {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--raised);
+}
+
+.settingsCard {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+}
+
+.settingsTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.settingsTitle svg {
+  color: var(--accent);
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.fieldLabel {
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  background: var(--page);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.875rem;
+  padding: 9px 12px;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 5.5rem;
+  line-height: 1.55;
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: color-mix(in srgb, var(--muted) 62%, transparent);
+}
+
+.input[aria-invalid="true"] {
+  border-color: var(--accent);
+}
+
+.selectTrigger {
+  background: var(--page);
+  font-size: 0.875rem;
+  min-height: 40px;
+  padding: 9px 12px;
+}
+
+.selectPicker {
+  min-width: 0;
+  width: 100%;
+}
+
+.issue {
+  margin: 0;
+  color: var(--accent);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+/* Billing preview switch — chip grammar borrowed from the platform picker. */
+.chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  min-height: 36px;
+  padding: 6px 16px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.chip:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.chip[aria-checked="true"] {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+/* Custom switch (role="switch") — pill track + knob. */
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  text-align: start;
+}
+
+.switchTrack {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 20px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--page);
+  position: relative;
+  transition:
+    background-color 150ms,
+    border-color 150ms;
+}
+
+.switchTrack::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  inset-inline-start: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition:
+    transform 150ms var(--ease),
+    background-color 150ms;
+}
+
+.switch[aria-checked="true"] {
+  color: var(--text);
+}
+
+.switch[aria-checked="true"] .switchTrack {
+  background: color-mix(in srgb, var(--accent) 22%, var(--page));
+  border-color: var(--accent);
+}
+
+.switch[aria-checked="true"] .switchTrack::after {
+  transform: translateX(14px);
+  background: var(--accent);
+}
+
+.tiers {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+}
+
+.tierEditor {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+
+.tierEditor[data-featured="true"] {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.tierHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.tierTitle {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tierTitle svg {
+  color: var(--accent);
+}
+
+.tierActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.featureToggle,
+.removeBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 4px 12px;
+}
+
+.removeBtn {
+  width: 32px;
+  padding: 0;
+  border-radius: var(--radius-control);
+}
+
+.featureToggle:hover:not(:disabled),
+.removeBtn:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.featureToggle[aria-checked="true"] {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.featureToggle:disabled,
+.removeBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.priceRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.addBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-card);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.addBtn:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+
+.addBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.copyBar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.copyBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 20px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: var(--accent-fill, var(--accent));
+  color: var(--accent-fill-ink, var(--accent-ink));
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.copyBtn:hover {
+  background: var(--accent-fill-hover, var(--accent-hover));
+}
+
+.copyStatus {
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+.jsonDetails {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--raised);
+}
+
+.jsonDetails summary {
+  cursor: pointer;
+  padding: 12px 16px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--muted);
+  list-style-position: inside;
+  border-radius: var(--radius-card);
+}
+
+.jsonDetails summary:hover {
+  color: var(--text);
+}
+
+.jsonDetails summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.jsonDetails pre {
+  margin: 0;
+  padding: 0 16px 16px;
+  max-height: 320px;
+  overflow: auto;
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: var(--content-text);
+}
+
+/* ---------- live preview ---------- */
+
+.previewWrap {
+  min-width: 0;
+  position: sticky;
+  top: calc(var(--header-h) + 20px);
+  display: grid;
+  gap: 12px;
+}
+
+.previewLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.previewDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* The mock pricing section — styled like a real page, not a wireframe. */
+.preview {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-surface);
+  background: var(--section);
+  padding: clamp(24px, 4vw, 44px) clamp(16px, 3vw, 32px);
+  overflow: hidden;
+}
+
+.previewHead {
+  text-align: center;
+  margin-bottom: 26px;
+}
+
+.previewHead h2 {
+  margin: 0;
+  font-size: clamp(1.4rem, 2.4vw, 1.9rem);
+  font-weight: 550;
+  letter-spacing: -0.02em;
+}
+
+.previewHead p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.previewGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
+  gap: 14px;
+  align-items: stretch;
+}
+
+.priceCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 22px 20px 18px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--raised);
+  min-width: 0;
+}
+
+.priceCardFeatured {
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
+  background:
+    radial-gradient(
+      130% 80% at 50% -20%,
+      color-mix(in srgb, var(--accent-fill, var(--accent)) 22%, transparent),
+      transparent 60%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent-fill, var(--accent)) 16%, var(--raised)),
+      var(--raised) 78%
+    );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--accent-fill, var(--accent)) 42%, transparent),
+    0 18px 50px color-mix(in srgb, var(--accent-fill, var(--accent)) 16%, transparent);
+}
+
+@media (min-width: 640px) {
+  .priceCardFeatured {
+    transform: translateY(-6px);
+  }
+}
+
+.ribbon {
+  position: absolute;
+  inset-block-start: -11px;
+  inset-inline-start: 20px;
+  padding: 3px 11px;
+  border-radius: 999px;
+  background: var(--accent-fill, var(--accent));
+  color: var(--accent-fill-ink, var(--accent-ink));
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+}
+
+.tierName {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.3;
+  min-height: 1.3em;
+}
+
+.priceLine {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin: 0;
+  flex-wrap: wrap;
+}
+
+.amount {
+  color: var(--text);
+  font-size: clamp(1.75rem, 3vw, 2.125rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.period {
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+.billRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 22px;
+}
+
+.billNote {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.saveBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.featList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 9px;
+}
+
+.featList li {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--content-text);
+}
+
+.featList svg {
+  flex-shrink: 0;
+  margin-top: 0.18em;
+  color: var(--accent);
+}
+
+.emptyFeat {
+  color: var(--muted);
+}
+
+.mockCta {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+  font-size: 0.8125rem;
+  font-weight: 550;
+}
+
+.priceCardFeatured .mockCta {
+  border: 0;
+  background: var(--accent-fill, var(--accent));
+  color: var(--accent-fill-ink, var(--accent-ink));
+}
+
+/* ---------- responsive / motion ---------- */
+
+@media (max-width: 1099px) {
+  .tool {
+    grid-template-columns: 1fr;
+  }
+  .previewWrap {
+    position: static;
+  }
+}
+
+@media (max-width: 419px) {
+  .priceRow {
+    grid-template-columns: 1fr;
+  }
+  .settingsCard,
+  .tierEditor {
+    padding: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .chip,
+  .addBtn,
+  .featureToggle,
+  .removeBtn,
+  .copyBtn {
+    transition:
+      color 150ms,
+      border-color 150ms,
+      background-color 150ms,
+      opacity 150ms;
+  }
+  .previewDot {
+    animation: preview-pulse 2.4s ease-in-out infinite;
+  }
+  .priceCard,
+  .ribbon {
+    transition:
+      transform 200ms var(--ease),
+      box-shadow 200ms,
+      border-color 200ms;
+  }
+}
+
+@keyframes preview-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
