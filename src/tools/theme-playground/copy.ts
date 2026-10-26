@@ -11,7 +11,14 @@ export const copy = {
   heroLede:
     "Pick a pack, flip the density, radius, and font axes, and watch a real product shell repaint itself — powered by a small set of shared CSS tokens.",
   packGroupLabel: "Color packs",
-  packGroupAria: "Color pack",
+  packGroupAria: "Color packs",
+  filter: {
+    label: "Filter packs",
+    placeholder: "Filter by name or vibe…",
+    clear: "Clear filter",
+    count: "{shown} of {total}",
+    empty: "No packs match “{query}”.",
+  },
   axisLabels: {
     density: "Density",
     radius: "Radius",
@@ -52,12 +59,15 @@ export const copy = {
     schemeDark: "Dark",
     schemeLight: "Light",
     copyLabel: "Copy pack attribute",
+    copyVarsLabel: "Copy CSS variables",
     copiedLabel: "Copied",
+    failedLabel: "Copy failed",
+    surprise: "Surprise me",
   },
   explainer: {
     heading: "Token-driven themes, not one-off skins",
     paragraphs: [
-      "Every surface in the preview reads the same small set of CSS custom properties — page, section, raised surfaces, text, muted ink, borders, one accent, and the ink that sits on top of it. A color pack is just twelve values for those tokens plus a color-scheme flag, so swapping packs repaints every button, card, nav item, and chart at once. Nothing in the dashboard above hardcodes a color.",
+      "Every surface in the preview reads the same small set of CSS custom properties — page, section, raised surfaces, text, muted ink, borders, one accent, and the ink that sits on top of it. A color pack is just a value for each of those tokens plus a color-scheme flag, so swapping packs repaints every button, card, nav item, and chart at once. Nothing in the dashboard above hardcodes a color.",
       "Packs travel as data, not stylesheets. Pin one on any wrapper with a single data-theme attribute — the preview on this page uses exactly that mechanism, scoped to its own frame, which is why the dashboard can show Wine while the page around it keeps your own theme. The density, radius, and font chips are three UI preset axes; they ride alongside the pack, so compact + sharp + mono is one attribute each.",
       `All ${PACK_COUNT} packs live in this repo — dark Obsidian, Midnight, Pine, and friends through light Paper, Glacier, and Blossom. Name one on any wrapper and the whole subtree restyles.`,
     ],

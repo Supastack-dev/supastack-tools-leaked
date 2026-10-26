@@ -22,6 +22,9 @@ export function SiteHeader() {
             target="_blank"
             rel="noopener noreferrer"
             className={styles.githubLink}
+            /* The visible label is display:none under 419px, which drops it
+               from the a11y tree — keep a stable name on the icon-only link. */
+            aria-label="GitHub repository"
           >
             <GitBranch size={15} aria-hidden />
             <span className={styles.githubLabel}>GitHub</span>

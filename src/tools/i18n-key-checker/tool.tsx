@@ -1,24 +1,38 @@
 "use client";
 
 import {
+  ArrowLeftRight,
   Braces,
+  Check,
   CheckCircle2,
   ChevronDown,
   CircleAlert,
   Copy,
+  Download,
   Eraser,
   FileDiff,
+  FileJson,
   Languages,
   ListPlus,
+  Search,
   Sparkles,
+  SquareEqual,
   TriangleAlert,
+  X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
+import { downloadText } from "../../lib/download";
+import { useCopyState } from "../../lib/use-copy-state";
 import { copy, examplePair } from "./copy";
 import {
+  coverageRatio,
   diffLocales,
+  diffMarkdown,
+  filterDiff,
   flattenLocale,
+  issueTotal,
+  missingStub,
   parseLocaleJson,
   type FlattenedEntry,
   type FlattenedLocale,
@@ -27,7 +41,6 @@ import {
 import styles from "./tool.module.css";
 
 const DEBOUNCE_MS = 300;
-const COPY_RESET_MS = 1600;
 
 type Side =
   | Readonly<{ status: "empty" }>
@@ -44,7 +57,7 @@ function parseSide(raw: string): Side {
 }
 
 function displayKey(key: string): string {
-  return key === "" ? "(root)" : key;
+  return key === "" ? copy.labels.rootKey : key;
 }
 
 function truncate(text: string, max = 48): string {
@@ -58,23 +71,17 @@ function preview(entry: FlattenedEntry, max = 48): string {
   return String(entry.value);
 }
 
-function issueTotal(diff: LocaleDiff): number {
-  return (
-    diff.missing.length +
-    diff.extra.length +
-    diff.typeMismatch.length +
-    diff.emptyTarget.length +
-    diff.placeholderMismatch.length +
-    diff.arrayMismatch.length
-  );
-}
-
 export function I18nKeyCheckerTool() {
   const [baseInput, setBaseInput] = useState("");
   const [targetInput, setTargetInput] = useState("");
+  const [baseName, setBaseName] = useState("en.json");
+  const [targetName, setTargetName] = useState("de.json");
   const [settled, setSettled] = useState({ base: "", target: "" });
-  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
-  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [query, setQuery] = useState("");
+  const missingCopy = useCopyState(1600);
+  const stubCopy = useCopyState(1600);
+  const baseFileRef = useRef<HTMLInputElement>(null);
+  const targetFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -83,13 +90,6 @@ export function I18nKeyCheckerTool() {
     return () => clearTimeout(timer);
   }, [baseInput, targetInput]);
 
-  useEffect(
-    () => () => {
-      if (copyTimer.current) clearTimeout(copyTimer.current);
-    },
-    [],
-  );
-
   const base = useMemo(() => parseSide(settled.base), [settled.base]);
   const target = useMemo(() => parseSide(settled.target), [settled.target]);
   const diff = useMemo(
@@ -97,40 +97,56 @@ export function I18nKeyCheckerTool() {
       base.status === "ok" && target.status === "ok" ? diffLocales(base.map, target.map) : null,
     [base, target],
   );
+  const shown = useMemo(() => (diff ? filterDiff(diff, query) : null), [diff, query]);
 
   const loadExample = () => {
     setBaseInput(examplePair.base);
     setTargetInput(examplePair.target);
+    setBaseName("en.json");
+    setTargetName("de.json");
   };
 
   const clear = () => {
     setBaseInput("");
     setTargetInput("");
+    setQuery("");
     setSettled({ base: "", target: "" });
   };
 
-  const copyMissing = () => {
-    if (!diff || diff.missing.length === 0) return;
-    const done = () => {
-      if (copyTimer.current) clearTimeout(copyTimer.current);
-      copyTimer.current = setTimeout(() => setCopyState("idle"), COPY_RESET_MS);
-    };
-    if (!navigator.clipboard?.writeText) {
-      // No Clipboard API (insecure context/old browser) — same honest failure.
-      setCopyState("failed");
-      done();
-      return;
-    }
-    void navigator.clipboard
-      .writeText(diff.missing.join("\n"))
-      .then(() => {
-        setCopyState("copied");
-      })
-      .catch(() => {
-        setCopyState("failed");
-      })
-      .finally(done);
+  const swap = () => {
+    const nextBase = targetInput;
+    setTargetInput(baseInput);
+    setBaseInput(nextBase);
+    const nextName = targetName;
+    setTargetName(baseName);
+    setBaseName(nextName);
+    setSettled({ base: nextBase, target: baseInput });
   };
+
+  const openFile = (side: "base" | "target") => {
+    const input = side === "base" ? baseFileRef.current : targetFileRef.current;
+    input?.click();
+  };
+
+  const readFile = (side: "base" | "target", file: File) => {
+    void file.text().then((text) => {
+      if (side === "base") {
+        setBaseInput(text);
+        setBaseName(file.name);
+      } else {
+        setTargetInput(text);
+        setTargetName(file.name);
+      }
+    });
+  };
+
+  const stubJson = () =>
+    base.status === "ok" && shown
+      ? JSON.stringify(missingStub(base.map, shown.missing), null, 2)
+      : "";
+
+  const reportMarkdown = () =>
+    shown ? diffMarkdown(shown, { base: baseName, target: targetName }) : "";
 
   const pane = (
     id: "base" | "target",
@@ -139,22 +155,50 @@ export function I18nKeyCheckerTool() {
     value: string,
     side: Side,
     onChange: (next: string) => void,
+    fileRef: React.RefObject<HTMLInputElement | null>,
+    fileName: string,
   ) => {
     const errorId = `i18n-${id}-error`;
     return (
       <div className={styles.pane}>
         <div className={styles.paneHead}>
           <label htmlFor={`i18n-${id}`}>{label}</label>
-          {side.status === "ok" && (
-            <span className={styles.keyCount}>{copy.labels.keys(side.count)}</span>
-          )}
+          <span className={styles.paneMeta}>
+            {side.status === "ok" && (
+              <span className={styles.keyCount}>{copy.labels.keys(side.count)}</span>
+            )}
+            <button
+              className={styles.miniBtn}
+              onClick={() => openFile(id)}
+              title={copy.labels.openFile}
+              type="button"
+            >
+              <FileJson size={13} aria-hidden />
+              <span className={styles.miniBtnLabel}>
+                {fileName === "" ? copy.labels.openFile : fileName}
+              </span>
+            </button>
+            <input
+              accept=".json,application/json"
+              aria-hidden="true"
+              className={styles.srOnly}
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) readFile(id, file);
+                event.target.value = "";
+              }}
+              ref={fileRef}
+              tabIndex={-1}
+              type="file"
+            />
+          </span>
         </div>
         <textarea
           id={`i18n-${id}`}
           className={styles.textarea}
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          placeholder={'{"nav": {"home": "Home"}}'}
+          placeholder={copy.labels.panePlaceholder}
           spellCheck={false}
           autoCapitalize="off"
           autoCorrect="off"
@@ -191,11 +235,12 @@ export function I18nKeyCheckerTool() {
     icon: ReactNode,
     rows: ReactNode,
     count: number,
+    defaultOpen = true,
   ) => {
     if (count === 0) return null;
     const meta = copy.report.categories[name];
     return (
-      <details className={styles.group} data-group={name} open>
+      <details className={styles.group} data-group={name} open={defaultOpen}>
         <summary data-severity={severity}>
           {icon}
           <span className={styles.groupTitle}>{meta.label}</span>
@@ -228,7 +273,7 @@ export function I18nKeyCheckerTool() {
         </div>
       );
     }
-    if (!diff || base.status !== "ok" || target.status !== "ok") {
+    if (!diff || !shown || base.status !== "ok" || target.status !== "ok") {
       const hasError = base.status === "error" || target.status === "error";
       return (
         <div className={styles.empty} data-empty>
@@ -239,6 +284,7 @@ export function I18nKeyCheckerTool() {
       );
     }
     const total = issueTotal(diff);
+    const shownTotal = issueTotal(shown);
     if (total === 0) {
       return (
         <div className={styles.allClear}>
@@ -251,10 +297,15 @@ export function I18nKeyCheckerTool() {
       );
     }
     const categories = copy.report.categories;
+    const covered = base.count - diff.missing.length - diff.typeMismatch.length;
+    const percent = Math.round(coverageRatio(base.count, diff) * 100);
     return (
       <>
         <div className={styles.summary}>
           <p className={styles.statusLine}>{copy.report.issueCount(total)}</p>
+          <p className={styles.coverage} data-tone={percent === 100 ? "full" : undefined}>
+            {copy.labels.coverage(Math.max(0, covered), base.count, percent)}
+          </p>
           <ul className={styles.chips}>
             {(
               [
@@ -263,6 +314,7 @@ export function I18nKeyCheckerTool() {
                 ["placeholderMismatch", "warning", <Braces key="i" size={13} aria-hidden />],
                 ["arrayMismatch", "warning", <CircleAlert key="i" size={13} aria-hidden />],
                 ["emptyTarget", "info", <CircleAlert key="i" size={13} aria-hidden />],
+                ["identicalTarget", "info", <SquareEqual key="i" size={13} aria-hidden />],
                 ["extra", "info", <ListPlus key="i" size={13} aria-hidden />],
               ] as const
             ).map(([name, severity, icon]) => {
@@ -275,97 +327,190 @@ export function I18nKeyCheckerTool() {
               );
             })}
           </ul>
-          {diff.missing.length > 0 && (
+          <div className={styles.summaryActions}>
+            <label className={styles.filter}>
+              <Search size={13} aria-hidden />
+              <input
+                aria-label={copy.labels.filterPlaceholder}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder={copy.labels.filterPlaceholder}
+                type="search"
+                value={query}
+              />
+              {query !== "" && (
+                <button
+                  aria-label={copy.labels.filterClear}
+                  onClick={() => setQuery("")}
+                  type="button"
+                >
+                  <X size={12} aria-hidden />
+                </button>
+              )}
+            </label>
+            {diff.missing.length > 0 && (
+              <>
+                <button
+                  type="button"
+                  className={styles.copyButton}
+                  data-action="copy-missing"
+                  data-state={missingCopy.state}
+                  disabled={shown.missing.length === 0}
+                  onClick={() => {
+                    void missingCopy.copy(shown.missing.join("\n"));
+                  }}
+                >
+                  {missingCopy.state === "copied" ? (
+                    <Check size={14} aria-hidden />
+                  ) : (
+                    <Copy size={14} aria-hidden />
+                  )}
+                  {missingCopy.state === "copied"
+                    ? copy.labels.copied
+                    : copy.labels.copyMissing}
+                </button>
+                <button
+                  type="button"
+                  className={styles.copyButton}
+                  data-action="copy-stub"
+                  data-state={stubCopy.state}
+                  disabled={shown.missing.length === 0}
+                  onClick={() => {
+                    void stubCopy.copy(stubJson());
+                  }}
+                >
+                  {stubCopy.state === "copied" ? (
+                    <Check size={14} aria-hidden />
+                  ) : (
+                    <Braces size={14} aria-hidden />
+                  )}
+                  {stubCopy.state === "copied" ? copy.labels.copied : copy.labels.copyStub}
+                </button>
+                <button
+                  type="button"
+                  className={styles.copyButton}
+                  data-action="download-stub"
+                  disabled={shown.missing.length === 0}
+                  onClick={() => {
+                    downloadText(
+                      `${targetName.replace(/\.json$/i, "")}-missing.json`,
+                      stubJson(),
+                      "application/json",
+                    );
+                  }}
+                >
+                  <Download size={14} aria-hidden />
+                  {copy.labels.downloadStub}
+                </button>
+              </>
+            )}
             <button
               type="button"
               className={styles.copyButton}
-              data-action="copy-missing"
-              data-state={copyState}
-              onClick={copyMissing}
+              data-action="download-report"
+              onClick={() => {
+                downloadText("i18n-coverage-report.md", reportMarkdown(), "text/markdown");
+              }}
             >
-              {copyState === "copied" ? (
-                <CheckCircle2 size={14} aria-hidden />
-              ) : (
-                <Copy size={14} aria-hidden />
-              )}
-              {copyState === "copied" ? copy.labels.copied : copy.labels.copyMissing}
+              <FileDiff size={14} aria-hidden />
+              {copy.labels.downloadReport}
             </button>
-          )}
+          </div>
         </div>
-        {copyState === "failed" ? (
+        {missingCopy.state === "failed" || stubCopy.state === "failed" ? (
           <p className={styles.error} role="alert">
             <TriangleAlert size={13} aria-hidden /> {copy.labels.copyFailed}
           </p>
         ) : null}
-        <div className={styles.groups}>
-          {group(
-            "missing",
-            "critical",
-            <TriangleAlert size={15} aria-hidden />,
-            diff.missing.map((key) => {
-              const entry = base.map.get(key);
-              return row(
-                key,
-                entry ? `${entry.type} · ${preview(entry)}` : null,
-                entry ? preview(entry, Number.POSITIVE_INFINITY) : undefined,
-              );
-            }),
-            diff.missing.length,
-          )}
-          {group(
-            "typeMismatch",
-            "warning",
-            <FileDiff size={15} aria-hidden />,
-            diff.typeMismatch.map((item) => row(item.key, `${item.baseType} → ${item.targetType}`)),
-            diff.typeMismatch.length,
-          )}
-          {group(
-            "placeholderMismatch",
-            "warning",
-            <Braces size={15} aria-hidden />,
-            diff.placeholderMismatch.map((item) =>
-              row(item.key, `missing ${item.missingVars.map((v) => `{${v}}`).join(", ")}`),
-            ),
-            diff.placeholderMismatch.length,
-          )}
-          {group(
-            "emptyTarget",
-            "info",
-            <CircleAlert size={15} aria-hidden />,
-            diff.emptyTarget.map((key) => {
-              const entry = base.map.get(key);
-              return row(
-                key,
-                entry ? `base: ${preview(entry)}` : null,
-                entry ? preview(entry, Number.POSITIVE_INFINITY) : undefined,
-              );
-            }),
-            diff.emptyTarget.length,
-          )}
-          {group(
-            "arrayMismatch",
-            "warning",
-            <CircleAlert size={15} aria-hidden />,
-            diff.arrayMismatch.map((item) =>
-              row(item.key, `${item.baseLength} items → ${item.targetLength} items`),
-            ),
-            diff.arrayMismatch.length,
-          )}
-          {group(
-            "extra",
-            "info",
-            <ListPlus size={15} aria-hidden />,
-            diff.extra.map((key) => {
-              const entry = target.map.get(key);
-              return row(
-                key,
-                entry ? `${entry.type} · ${preview(entry)}` : null,
-                entry ? preview(entry, Number.POSITIVE_INFINITY) : undefined,
-              );
-            }),
-            diff.extra.length,
-          )}
-        </div>
+        {shownTotal === 0 ? (
+          <p className={styles.filterEmpty}>{copy.labels.filterEmpty}</p>
+        ) : (
+          <div className={styles.groups}>
+            {group(
+              "missing",
+              "critical",
+              <TriangleAlert size={15} aria-hidden />,
+              shown.missing.map((key) => {
+                const entry = base.map.get(key);
+                return row(
+                  key,
+                  entry ? `${entry.type} · ${preview(entry)}` : null,
+                  entry ? preview(entry, Number.POSITIVE_INFINITY) : undefined,
+                );
+              }),
+              shown.missing.length,
+            )}
+            {group(
+              "typeMismatch",
+              "warning",
+              <FileDiff size={15} aria-hidden />,
+              shown.typeMismatch.map((item) =>
+                row(item.key, `${item.baseType} → ${item.targetType}`),
+              ),
+              shown.typeMismatch.length,
+            )}
+            {group(
+              "placeholderMismatch",
+              "warning",
+              <Braces size={15} aria-hidden />,
+              shown.placeholderMismatch.map((item) =>
+                row(item.key, `missing ${item.missingVars.map((v) => `{${v}}`).join(", ")}`),
+              ),
+              shown.placeholderMismatch.length,
+            )}
+            {group(
+              "arrayMismatch",
+              "warning",
+              <CircleAlert size={15} aria-hidden />,
+              shown.arrayMismatch.map((item) =>
+                row(item.key, `${item.baseLength} items → ${item.targetLength} items`),
+              ),
+              shown.arrayMismatch.length,
+            )}
+            {group(
+              "emptyTarget",
+              "info",
+              <CircleAlert size={15} aria-hidden />,
+              shown.emptyTarget.map((key) => {
+                const entry = base.map.get(key);
+                return row(
+                  key,
+                  entry ? `base: ${preview(entry)}` : null,
+                  entry ? preview(entry, Number.POSITIVE_INFINITY) : undefined,
+                );
+              }),
+              shown.emptyTarget.length,
+            )}
+            {group(
+              "identicalTarget",
+              "info",
+              <SquareEqual size={15} aria-hidden />,
+              shown.identicalTarget.map((key) => {
+                const entry = base.map.get(key);
+                return row(
+                  key,
+                  entry ? preview(entry) : null,
+                  entry ? preview(entry, Number.POSITIVE_INFINITY) : undefined,
+                );
+              }),
+              shown.identicalTarget.length,
+              false,
+            )}
+            {group(
+              "extra",
+              "info",
+              <ListPlus size={15} aria-hidden />,
+              shown.extra.map((key) => {
+                const entry = target.map.get(key);
+                return row(
+                  key,
+                  entry ? `${entry.type} · ${preview(entry)}` : null,
+                  entry ? preview(entry, Number.POSITIVE_INFINITY) : undefined,
+                );
+              }),
+              shown.extra.length,
+            )}
+          </div>
+        )}
       </>
     );
   };
@@ -375,9 +520,27 @@ export function I18nKeyCheckerTool() {
       <div className={styles.toolHead}>
         <Languages size={15} aria-hidden />
         <span>{copy.labels.tagline}</span>
+        <button
+          aria-label={copy.labels.swap}
+          className={styles.swapBtn}
+          onClick={swap}
+          title={copy.labels.swap}
+          type="button"
+        >
+          <ArrowLeftRight size={13} aria-hidden />
+        </button>
       </div>
       <div className={styles.panes}>
-        {pane("base", copy.labels.base, copy.labels.baseHint, baseInput, base, setBaseInput)}
+        {pane(
+          "base",
+          copy.labels.base,
+          copy.labels.baseHint,
+          baseInput,
+          base,
+          setBaseInput,
+          baseFileRef,
+          baseName,
+        )}
         {pane(
           "target",
           copy.labels.target,
@@ -385,6 +548,8 @@ export function I18nKeyCheckerTool() {
           targetInput,
           target,
           setTargetInput,
+          targetFileRef,
+          targetName,
         )}
       </div>
       <div className={styles.toolbar}>

@@ -5,9 +5,14 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  coverageRatio,
   diffLocales,
+  diffMarkdown,
   extractPlaceholders,
+  filterDiff,
   flattenLocale,
+  issueTotal,
+  missingStub,
   parseLocaleJson,
   type FlattenedLocale,
 } from "./logic";
@@ -141,16 +146,31 @@ describe("diffLocales", () => {
     expect(diff.typeMismatch).toHaveLength(1);
   });
 
-  it("returns empty buckets for identical files", () => {
-    const diff = diffLocales(flat({ a: "x", n: { b: 1 } }), flat({ a: "x", n: { b: 1 } }));
+  it("returns empty buckets for identical non-string files", () => {
+    const diff = diffLocales(flat({ a: 1, n: { b: true } }), flat({ a: 1, n: { b: true } }));
     expect(diff).toEqual({
       missing: [],
       extra: [],
       typeMismatch: [],
       emptyTarget: [],
+      identicalTarget: [],
       placeholderMismatch: [],
       arrayMismatch: [],
     });
+  });
+
+  it("flags target strings identical to the base — likely untranslated", () => {
+    const diff = diffLocales(
+      flat({ keep: "Dashboard", ok: "Anmelden" }),
+      flat({ keep: "Dashboard", ok: "Sign in" }),
+    );
+    // `keep` is identical in both — wait, `ok` base is "Anmelden" vs target
+    // "Sign in" (differs); `keep` matches → flagged once.
+    expect(diff.identicalTarget).toEqual(["keep"]);
+    // Empty strings are reported by their own bucket, not this one.
+    const diff2 = diffLocales(flat({ a: "" }), flat({ a: "" }));
+    expect(diff2.identicalTarget).toEqual([]);
+    expect(diff2.emptyTarget).toEqual([]);
   });
 
   it("flags arrays whose item counts drift", () => {
@@ -164,6 +184,64 @@ describe("diffLocales", () => {
     ]);
     // A same-length array is a translation target, not drift.
     expect(diff.typeMismatch).toEqual([]);
+  });
+});
+
+describe("report helpers", () => {
+  const base = flat({
+    "auth.cta": "Start",
+    "auth.greeting": "Hello {name}",
+    "nav.home": "Home",
+    "plan.seats": 3,
+  });
+  const target = flat({
+    "auth.greeting": "Hallo",
+    "nav.home": "Home",
+    "plan.seats": "3",
+    promo: "Neu",
+  });
+  const diff = diffLocales(base, target);
+
+  it("counts every category in issueTotal", () => {
+    // missing: auth.cta · extra: promo · typeMismatch: plan.seats ·
+    // identical: nav.home · placeholder: auth.greeting ({name} dropped)
+    expect(issueTotal(diff)).toBe(5);
+  });
+
+  it("measures coverage as right-type answers over base keys", () => {
+    // 4 base keys; missing + typeMismatch = 2 uncovered → 50%.
+    expect(coverageRatio(base.size, diff)).toBe(0.5);
+    expect(coverageRatio(0, diff)).toBe(1);
+    const clean = diffLocales(base, base);
+    expect(coverageRatio(base.size, clean)).toBe(1);
+  });
+
+  it("filters every category by key substring, case-insensitive", () => {
+    const filtered = filterDiff(diff, "AUTH");
+    expect(filtered.missing).toEqual(["auth.cta"]);
+    expect(filtered.placeholderMismatch.map((i) => i.key)).toEqual(["auth.greeting"]);
+    expect(filtered.extra).toEqual([]);
+    expect(filtered.identicalTarget).toEqual([]);
+    expect(filterDiff(diff, "  ")).toBe(diff);
+  });
+
+  it("rebuilds a nested translator stub from missing keys", () => {
+    const stub = missingStub(base, ["auth.cta", "gone.key"]);
+    expect(stub).toEqual({ auth: { cta: "Start" } });
+    // Base values ride along verbatim, including arrays.
+    const withArray = flat({ tips: ["a", "b"] });
+    expect(missingStub(withArray, ["tips"])).toEqual({ tips: ["a", "b"] });
+  });
+
+  it("emits a markdown report grouped by category", () => {
+    const md = diffMarkdown(diff, { base: "en.json", target: "de.json" });
+    expect(md).toContain("**en.json → de.json** — 5 issues");
+    expect(md).toContain("## Missing keys (1)");
+    expect(md).toContain("- `auth.cta`");
+    expect(md).toContain("`plan.seats` — number → string");
+    expect(md).toContain("`auth.greeting` — missing {name}");
+    expect(md).toContain("## Identical to base (1)");
+    expect(md.endsWith("\n")).toBe(true);
   });
 });
 

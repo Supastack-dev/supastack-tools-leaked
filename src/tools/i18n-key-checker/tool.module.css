@@ -84,11 +84,75 @@ main .hero h1 {
   color: var(--text);
 }
 
+.paneMeta {
+  align-items: center;
+  display: inline-flex;
+  gap: 10px;
+  min-width: 0;
+}
+
+.miniBtn {
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  gap: 5px;
+  max-width: 180px;
+  padding: 3px 6px;
+  transition: color 150ms var(--ease);
+}
+
+.miniBtn:hover {
+  color: var(--accent);
+}
+
+.miniBtn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.miniBtnLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .keyCount {
   font-family: var(--font-mono);
   font-size: 0.6875rem;
   color: var(--muted);
   white-space: nowrap;
+}
+
+.swapBtn {
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+  margin-left: auto;
+  padding: 5px;
+  transition:
+    color 150ms var(--ease),
+    transform 150ms var(--ease);
+}
+
+.swapBtn:hover {
+  color: var(--accent);
+  transform: rotate(180deg);
+}
+
+.swapBtn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
 .textarea {
@@ -201,6 +265,21 @@ main .hero h1 {
   background: var(--hover-fill);
 }
 
+.copyButton:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.copyButton:disabled:hover {
+  background: transparent;
+  border-color: var(--border-strong);
+}
+
+.copyButton[data-state="copied"] {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  color: var(--accent);
+}
+
 .report {
   margin-top: 20px;
 }
@@ -278,6 +357,83 @@ main .hero h1 {
 .statusLine {
   font-size: 0.9375rem;
   font-weight: 550;
+}
+
+.coverage {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.coverage[data-tone="full"] {
+  color: var(--accent);
+}
+
+.summaryActions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.filter {
+  align-items: center;
+  background: var(--page);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  color: var(--muted);
+  display: inline-flex;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 10px;
+}
+
+.filter:focus-within {
+  border-color: var(--accent);
+}
+
+.filter input {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.8125rem;
+  min-width: 0;
+  outline: none;
+  width: 150px;
+}
+
+.filter input::placeholder {
+  color: color-mix(in srgb, var(--muted) 70%, transparent);
+}
+
+.filter input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.filter button {
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+  padding: 2px;
+}
+
+.filter button:hover {
+  color: var(--text);
+}
+
+.filterEmpty {
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.8125rem;
+  margin-top: 14px;
+  padding: 16px 2px;
 }
 
 .chips {
@@ -530,6 +686,8 @@ main .cta h2 {
   .toolButton,
   .copyButton,
   .chevron,
+  .swapBtn,
+  .miniBtn,
   .cta a {
     transition: none;
   }

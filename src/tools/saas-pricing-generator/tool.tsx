@@ -1,6 +1,21 @@
 "use client";
 
-import { Check, CheckCheck, Copy, Plus, SlidersHorizontal, Star, Trash2 } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  Check,
+  CheckCheck,
+  Copy,
+  CopyPlus,
+  Link2,
+  Plus,
+  RotateCcw,
+  SlidersHorizontal,
+  Star,
+  Table,
+  Trash2,
+  X,
+} from "lucide-react";
 import {
   useEffect,
   useMemo,
@@ -10,6 +25,7 @@ import {
 } from "react";
 
 import { FormSelect } from "../../components/form-select";
+import { useCopyState } from "../../lib/use-copy-state";
 import { pricingToolCopy as copy } from "./copy";
 import {
   annualDiscountPercent,
@@ -21,30 +37,43 @@ import {
   createDefaultPricingState,
   createTier,
   CURRENCY_OPTIONS,
+  decodeDraftState,
+  DEFAULT_CTA_LABEL,
+  duplicateTier,
+  encodeDraftState,
   formatPrice,
+  HEADING_MAX,
   monthlyPriceIssue,
-  suggestedAnnualPrice,
+  moveTier,
   parsePrice,
+  PRICE_SUFFIX_OPTIONS,
   serializeConfig,
+  serializeMarkdownTable,
   setFeaturedTier,
+  SUBHEADING_MAX,
+  suggestedAnnualPrice,
+  TIER_CTA_MAX,
+  TIER_TAGLINE_MAX,
   TIER_NAME_MAX,
   tierNameIssue,
   type FieldIssue,
   type PricingCurrency,
   type PricingDraftState,
   type PricingTier,
+  type PriceSuffix,
   type TierDraft,
 } from "./logic";
 import styles from "./tool.module.css";
 
 type BillingMode = "monthly" | "annual";
-type CopyState = "idle" | "copied" | "failed";
 
 const ISSUE_TEXT: Record<FieldIssue, string> = {
   required: copy.controls.issues.required,
   invalid: copy.controls.issues.invalid,
   "too-long": copy.controls.issues.tooLong,
 };
+
+const HASH_WRITE_MS = 400;
 
 function IssueNote({ id, issue }: { id: string; issue: FieldIssue | null }) {
   if (!issue) return null;
@@ -58,20 +87,28 @@ function IssueNote({ id, issue }: { id: string; issue: FieldIssue | null }) {
 function TierEditor({
   draft,
   index,
+  total,
   currency,
+  suffix,
   showAnnual,
   removable,
   onPatch,
   onFeature,
+  onMove,
+  onDuplicate,
   onRemove,
 }: {
   draft: TierDraft;
   index: number;
+  total: number;
   currency: PricingCurrency;
+  suffix: PriceSuffix;
   showAnnual: boolean;
   removable: boolean;
   onPatch: (id: string, patch: Partial<TierDraft>) => void;
   onFeature: (id: string, featured: boolean) => void;
+  onMove: (id: string, direction: -1 | 1) => void;
+  onDuplicate: (id: string) => void;
   onRemove: (id: string) => void;
 }) {
   const nameIssue = tierNameIssue(draft.name);
@@ -109,31 +146,71 @@ function TierEditor({
             <Star size={12} aria-hidden fill={draft.featured ? "currentColor" : "none"} />
             {copy.controls.featureThisTier}
           </button>
-          <button
-            type="button"
-            className={styles.removeBtn}
-            disabled={!removable}
-            aria-label={`${copy.controls.removeTier} ${fallbackName}`}
-            onClick={() => onRemove(draft.id)}
-          >
-            <Trash2 size={14} aria-hidden />
-          </button>
+          <span className={styles.tierOps}>
+            <button
+              type="button"
+              className={styles.iconBtn}
+              disabled={index === 0}
+              aria-label={`${copy.controls.moveUp}: ${fallbackName}`}
+              onClick={() => onMove(draft.id, -1)}
+            >
+              <ArrowUp size={14} aria-hidden />
+            </button>
+            <button
+              type="button"
+              className={styles.iconBtn}
+              disabled={index === total - 1}
+              aria-label={`${copy.controls.moveDown}: ${fallbackName}`}
+              onClick={() => onMove(draft.id, 1)}
+            >
+              <ArrowDown size={14} aria-hidden />
+            </button>
+            <button
+              type="button"
+              className={styles.iconBtn}
+              aria-label={`${copy.controls.duplicateTier}: ${fallbackName}`}
+              onClick={() => onDuplicate(draft.id)}
+            >
+              <CopyPlus size={14} aria-hidden />
+            </button>
+            <button
+              type="button"
+              className={styles.iconBtn}
+              disabled={!removable}
+              aria-label={`${copy.controls.removeTier} ${fallbackName}`}
+              onClick={() => onRemove(draft.id)}
+            >
+              <Trash2 size={14} aria-hidden />
+            </button>
+          </span>
         </span>
       </div>
 
-      <label className={styles.field}>
-        <span className={styles.fieldLabel}>{copy.controls.name}</span>
-        <input
-          id={`${draft.id}-name`}
-          className={styles.input}
-          value={draft.name}
-          placeholder={copy.controls.namePlaceholder}
-          maxLength={TIER_NAME_MAX}
-          aria-invalid={nameIssue !== null}
-          aria-describedby={nameIssue ? `${draft.id}-name-issue` : undefined}
-          onChange={(event) => onPatch(draft.id, { name: event.target.value })}
-        />
-      </label>
+      <div className={styles.priceRow}>
+        <label className={styles.field}>
+          <span className={styles.fieldLabel}>{copy.controls.name}</span>
+          <input
+            id={`${draft.id}-name`}
+            className={styles.input}
+            value={draft.name}
+            placeholder={copy.controls.namePlaceholder}
+            maxLength={TIER_NAME_MAX}
+            aria-invalid={nameIssue !== null}
+            aria-describedby={nameIssue ? `${draft.id}-name-issue` : undefined}
+            onChange={(event) => onPatch(draft.id, { name: event.target.value })}
+          />
+        </label>
+        <label className={styles.field}>
+          <span className={styles.fieldLabel}>{copy.controls.tagline}</span>
+          <input
+            className={styles.input}
+            value={draft.tagline}
+            placeholder={copy.controls.taglinePlaceholder}
+            maxLength={TIER_TAGLINE_MAX}
+            onChange={(event) => onPatch(draft.id, { tagline: event.target.value })}
+          />
+        </label>
+      </div>
       <IssueNote id={`${draft.id}-name-issue`} issue={nameIssue} />
 
       <div className={styles.priceRow}>
@@ -170,7 +247,7 @@ function TierEditor({
       {annualHint ? (
         <p className={styles.hint}>
           ≈ {formatPrice(annualHint.equivalent, currency)}
-          {copy.preview.perMonth}
+          {suffix}
           {annualHint.percent !== null && annualHint.percent > 0
             ? ` · ${copy.preview.saveBadge.replace("{percent}", String(annualHint.percent))}`
             : ""}
@@ -189,6 +266,17 @@ function TierEditor({
           onChange={(event) => onPatch(draft.id, { featuresText: event.target.value })}
         />
       </label>
+
+      <label className={styles.field}>
+        <span className={styles.fieldLabel}>{copy.controls.ctaLabel}</span>
+        <input
+          className={styles.input}
+          value={draft.cta}
+          placeholder={copy.controls.ctaPlaceholder}
+          maxLength={TIER_CTA_MAX}
+          onChange={(event) => onPatch(draft.id, { cta: event.target.value })}
+        />
+      </label>
     </li>
   );
 }
@@ -196,10 +284,12 @@ function TierEditor({
 function PreviewCard({
   tier,
   currency,
+  suffix,
   isAnnual,
 }: {
   tier: PricingTier;
   currency: PricingCurrency;
+  suffix: PriceSuffix;
   isAnnual: boolean;
 }) {
   const price = isAnnual ? annualMonthlyEquivalent(tier) : tier.monthlyPrice;
@@ -208,11 +298,12 @@ function PreviewCard({
     <article className={`${styles.priceCard} ${tier.featured ? styles.priceCardFeatured : ""}`}>
       {tier.featured ? <span className={styles.ribbon}>{copy.preview.mostPopular}</span> : null}
       <h3 className={styles.tierName}>{tier.name || copy.preview.untitled}</h3>
+      {tier.tagline ? <p className={styles.tierTagline}>{tier.tagline}</p> : null}
       <p className={styles.priceLine}>
         <span className={styles.amount}>
           {price === 0 ? copy.preview.free : formatPrice(price, currency)}
         </span>
-        {price !== 0 ? <span className={styles.period}>{copy.preview.perMonth}</span> : null}
+        {price !== 0 ? <span className={styles.period}>{suffix}</span> : null}
       </p>
       <div className={styles.billRow}>
         <span className={styles.billNote}>
@@ -233,9 +324,13 @@ function PreviewCard({
           {tier.features.map((feature, index) => (
             // Features are plain strings — repeats are legal, so the key
             // needs the position too.
-            <li key={`${index}-${feature}`}>
-              <Check size={14} aria-hidden />
-              <span>{feature}</span>
+            <li key={`${index}-${feature.text}`} data-excluded={!feature.included || undefined}>
+              {feature.included ? (
+                <Check size={14} aria-hidden />
+              ) : (
+                <X size={14} aria-hidden className={styles.excludedIcon} />
+              )}
+              <span>{feature.text}</span>
             </li>
           ))}
         </ul>
@@ -244,7 +339,7 @@ function PreviewCard({
           <li className={styles.emptyFeat}>{copy.preview.emptyFeatures}</li>
         </ul>
       )}
-      <span className={styles.mockCta}>{copy.preview.cta}</span>
+      <span className={styles.mockCta}>{tier.cta || DEFAULT_CTA_LABEL}</span>
     </article>
   );
 }
@@ -252,20 +347,48 @@ function PreviewCard({
 export function SaasPricingGenerator() {
   const [state, setState] = useState<PricingDraftState>(createDefaultPricingState);
   const [billing, setBilling] = useState<BillingMode>("annual");
-  const [copyState, setCopyState] = useState<CopyState>("idle");
-  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const json = useCopyState(2200);
+  const markdown = useCopyState(2200);
+  const share = useCopyState(2200);
   const pendingFocus = useRef<string | null>(null);
+  const lastEncoded = useRef<string>("");
+  // The hash writer must not run before the restore attempt — in a hidden
+  // tab rAF never fires but timers do, which would overwrite a shared `c=`
+  // payload with the default state before it was ever read.
+  const restored = useRef(false);
 
   const config = useMemo(() => buildPricingConfig(state), [state]);
   const serialized = useMemo(() => serializeConfig(config), [config]);
+  const markdownTable = useMemo(() => serializeMarkdownTable(config), [config]);
   const isAnnual = state.showAnnual && billing === "annual";
 
-  useEffect(
-    () => () => {
-      if (copyTimer.current !== null) clearTimeout(copyTimer.current);
-    },
-    [],
-  );
+  // Restore a shared draft from the `#c=` hash after mount — the server
+  // render always shows defaults, so the swap must happen client-side. The
+  // rAF callback keeps the setState out of the effect body (external-system
+  // read → state update, per the hooks lint).
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      restored.current = true;
+      const decoded = decodeDraftState(window.location.hash);
+      if (!decoded) return;
+      lastEncoded.current = encodeDraftState(decoded);
+      setState(decoded);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  // Keep the URL hash in sync (debounced) so the table is shareable and
+  // survives a refresh — replaceState keeps history clean while editing.
+  useEffect(() => {
+    if (!restored.current) return;
+    const timer = setTimeout(() => {
+      const encoded = encodeDraftState(state);
+      if (encoded === lastEncoded.current) return;
+      lastEncoded.current = encoded;
+      history.replaceState(null, "", `#${encoded}`);
+    }, HASH_WRITE_MS);
+    return () => clearTimeout(timer);
+  }, [state]);
 
   useEffect(() => {
     if (pendingFocus.current === null) return;
@@ -282,6 +405,10 @@ export function SaasPricingGenerator() {
       ...current,
       tiers: current.tiers.map((tier) => (tier.id === id ? { ...tier, ...patch } : tier)),
     }));
+  }
+
+  function patchMeta(patch: Partial<Pick<PricingDraftState, "heading" | "subheading">>) {
+    setState((current) => ({ ...current, ...patch }));
   }
 
   function addTier() {
@@ -304,12 +431,34 @@ export function SaasPricingGenerator() {
     }));
   }
 
+  function moveTierById(id: string, direction: -1 | 1) {
+    setState((current) => ({ ...current, tiers: moveTier(current.tiers, id, direction) }));
+  }
+
+  function duplicateTierById(id: string) {
+    const source = state.tiers.find((tier) => tier.id === id);
+    if (!source || !canAddTier(state.tiers)) return;
+    const clone = duplicateTier(source);
+    pendingFocus.current = clone.id;
+    setState((current) => {
+      if (!canAddTier(current.tiers)) return current;
+      const index = current.tiers.findIndex((tier) => tier.id === id);
+      const tiers = [...current.tiers];
+      tiers.splice(index + 1, 0, clone);
+      return { ...current, tiers };
+    });
+  }
+
   function featureTier(id: string, featured: boolean) {
     setState((current) => ({ ...current, tiers: setFeaturedTier(current.tiers, id, featured) }));
   }
 
   function changeCurrency(currency: PricingCurrency) {
     setState((current) => ({ ...current, currency }));
+  }
+
+  function changeSuffix(priceSuffix: PriceSuffix) {
+    setState((current) => ({ ...current, priceSuffix }));
   }
 
   function changeBilling(next: BillingMode) {
@@ -320,6 +469,12 @@ export function SaasPricingGenerator() {
   function toggleAnnual(on: boolean) {
     setState((current) => ({ ...current, showAnnual: on }));
     if (!on) setBilling("monthly");
+  }
+
+  function resetAll() {
+    pendingFocus.current = null;
+    setBilling("annual");
+    setState(createDefaultPricingState());
   }
 
   function navigateBilling(event: ReactKeyboardEvent<HTMLButtonElement>, mode: BillingMode) {
@@ -345,17 +500,9 @@ export function SaasPricingGenerator() {
     buttons?.[order.indexOf(next)]?.focus();
   }
 
-  function copyJson() {
-    void (async () => {
-      try {
-        await navigator.clipboard.writeText(serialized);
-        setCopyState("copied");
-        if (copyTimer.current !== null) clearTimeout(copyTimer.current);
-        copyTimer.current = setTimeout(() => setCopyState("idle"), 2200);
-      } catch {
-        setCopyState("failed");
-      }
-    })();
+  function copyShareLink() {
+    const url = `${window.location.origin}${window.location.pathname}#${encodeDraftState(state)}`;
+    void share.copy(url);
   }
 
   const billingModes: readonly { value: BillingMode; label: string }[] = state.showAnnual
@@ -374,20 +521,37 @@ export function SaasPricingGenerator() {
             {copy.controls.heading}
           </h2>
 
-          <div className={styles.field}>
-            <span className={styles.fieldLabel}>
-              {copy.controls.currency}
-            </span>
-            <FormSelect<PricingCurrency>
-              defaultValue={state.currency}
-              label={copy.controls.currency}
-              name="currency"
-              nativeClassName={styles.input}
-              onValueChange={changeCurrency}
-              options={CURRENCY_OPTIONS}
-              pickerClassName={styles.selectPicker}
-              triggerClassName={styles.selectTrigger}
-            />
+          <div className={styles.priceRow}>
+            <div className={styles.field}>
+              <span className={styles.fieldLabel}>
+                {copy.controls.currency}
+              </span>
+              <FormSelect<PricingCurrency>
+                defaultValue={state.currency}
+                key={state.currency}
+                label={copy.controls.currency}
+                name="currency"
+                nativeClassName={styles.input}
+                onValueChange={changeCurrency}
+                options={CURRENCY_OPTIONS}
+                pickerClassName={styles.selectPicker}
+                triggerClassName={styles.selectTrigger}
+              />
+            </div>
+            <div className={styles.field}>
+              <span className={styles.fieldLabel}>{copy.controls.priceSuffix}</span>
+              <FormSelect<PriceSuffix>
+                defaultValue={state.priceSuffix}
+                key={state.priceSuffix}
+                label={copy.controls.priceSuffix}
+                name="priceSuffix"
+                nativeClassName={styles.input}
+                onValueChange={changeSuffix}
+                options={PRICE_SUFFIX_OPTIONS}
+                pickerClassName={styles.selectPicker}
+                triggerClassName={styles.selectTrigger}
+              />
+            </div>
           </div>
 
           <div className={styles.field}>
@@ -420,6 +584,34 @@ export function SaasPricingGenerator() {
             <span>{copy.controls.offerAnnual}</span>
             <span className={styles.switchTrack} aria-hidden />
           </button>
+
+          <div className={styles.pageCopy}>
+            <span className={styles.fieldLabel}>{copy.controls.pageCopy}</span>
+            <div className={styles.priceRow}>
+              <label className={styles.field}>
+                <span className={styles.srOnly}>{copy.controls.pageHeading}</span>
+                <input
+                  className={styles.input}
+                  value={state.heading}
+                  placeholder={copy.preview.heading}
+                  aria-label={copy.controls.pageHeading}
+                  maxLength={HEADING_MAX}
+                  onChange={(event) => patchMeta({ heading: event.target.value })}
+                />
+              </label>
+              <label className={styles.field}>
+                <span className={styles.srOnly}>{copy.controls.pageSubheading}</span>
+                <input
+                  className={styles.input}
+                  value={state.subheading}
+                  placeholder={copy.preview.subheading}
+                  aria-label={copy.controls.pageSubheading}
+                  maxLength={SUBHEADING_MAX}
+                  onChange={(event) => patchMeta({ subheading: event.target.value })}
+                />
+              </label>
+            </div>
+          </div>
         </div>
 
         <ol className={styles.tiers} aria-label={copy.controls.tiersLabel}>
@@ -428,11 +620,15 @@ export function SaasPricingGenerator() {
               key={draft.id}
               draft={draft}
               index={index}
+              total={state.tiers.length}
               currency={state.currency}
+              suffix={state.priceSuffix}
               showAnnual={state.showAnnual}
               removable={canRemoveTier(state.tiers)}
               onPatch={patchTier}
               onFeature={featureTier}
+              onMove={moveTierById}
+              onDuplicate={duplicateTierById}
               onRemove={removeTier}
             />
           ))}
@@ -453,22 +649,66 @@ export function SaasPricingGenerator() {
         ) : null}
 
         <div className={styles.copyBar}>
-          <button type="button" className={styles.copyBtn} onClick={copyJson}>
-            {copyState === "copied" ? (
+          <button
+            type="button"
+            className={styles.copyBtn}
+            data-state={json.state}
+            onClick={() => void json.copy(serialized)}
+          >
+            {json.state === "copied" ? (
               <CheckCheck size={15} aria-hidden />
             ) : (
               <Copy size={15} aria-hidden />
             )}
-            {copyState === "copied" ? copy.copy.copied : copy.copy.button}
+            {json.state === "copied" ? copy.copy.copied : copy.copy.button}
           </button>
-          <span className={styles.copyStatus} role="status">
-            {copyState === "copied"
-              ? copy.copy.copied
-              : copyState === "failed"
-                ? copy.copy.failed
-                : copy.copy.hint}
-          </span>
+          <button
+            type="button"
+            className={styles.ghostBtn}
+            data-state={markdown.state}
+            onClick={() => void markdown.copy(markdownTable)}
+          >
+            {markdown.state === "copied" ? (
+              <CheckCheck size={15} aria-hidden />
+            ) : (
+              <Table size={15} aria-hidden />
+            )}
+            {markdown.state === "copied" ? copy.copy.copied : copy.copy.buttonMarkdown}
+          </button>
+          <button
+            type="button"
+            className={styles.ghostBtn}
+            data-state={share.state}
+            onClick={copyShareLink}
+          >
+            {share.state === "copied" ? (
+              <CheckCheck size={15} aria-hidden />
+            ) : (
+              <Link2 size={15} aria-hidden />
+            )}
+            {share.state === "copied" ? copy.controls.shareCopied : copy.controls.share}
+          </button>
+          <button
+            type="button"
+            className={styles.resetBtn}
+            aria-label={copy.controls.reset}
+            title={copy.controls.reset}
+            onClick={resetAll}
+          >
+            <RotateCcw size={15} aria-hidden />
+          </button>
         </div>
+        <p className={styles.copyStatus} role="status">
+          {json.state === "failed" || markdown.state === "failed"
+            ? copy.copy.failed
+            : share.state === "failed"
+              ? copy.controls.shareFailed
+              : json.state === "copied" ||
+                  markdown.state === "copied" ||
+                  share.state === "copied"
+                ? copy.copy.copied
+                : copy.copy.hint}
+        </p>
 
         <details className={styles.jsonDetails}>
           <summary>{copy.copy.details}</summary>
@@ -485,8 +725,8 @@ export function SaasPricingGenerator() {
         </p>
         <section className={styles.preview} aria-label={copy.preview.label}>
           <div className={styles.previewHead}>
-            <h2>{copy.preview.heading}</h2>
-            <p>{copy.preview.subheading}</p>
+            <h2>{config.heading || copy.preview.heading}</h2>
+            <p>{config.subheading || copy.preview.subheading}</p>
           </div>
           <div className={styles.previewGrid}>
             {config.tiers.map((tier) => (
@@ -494,6 +734,7 @@ export function SaasPricingGenerator() {
                 key={tier.id}
                 tier={tier}
                 currency={config.currency}
+                suffix={config.priceSuffix}
                 isAnnual={isAnnual}
               />
             ))}

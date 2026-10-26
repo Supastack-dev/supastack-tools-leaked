@@ -3,9 +3,11 @@
 import {
   BarChart3,
   Bell,
+  Braces,
   Check,
   Copy,
   CreditCard,
+  Dices,
   LayoutDashboard,
   Moon,
   MonitorSmartphone,
@@ -14,20 +16,31 @@ import {
   Settings,
   Sun,
   Users,
+  X,
 } from "lucide-react";
-import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import {
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from "react";
 
+import { useCopyState } from "../../lib/use-copy-state";
 import { DEFAULT_THEME_ID, THEME_CATALOG, themeById, type ThemeId } from "../../theme/catalog";
 import { copy } from "./copy";
 import {
   AXIS_IDS,
   axisOptions,
+  cssVarSnippet,
   DEFAULT_AXIS_STATE,
+  filterPacks,
   nextPackIndex,
   packAttrSnippet,
-  packIndexOf,
   packSwatch,
   previewAttrs,
+  randomPackIndex,
   type AxisState,
 } from "./logic";
 import styles from "./tool.module.css";
@@ -44,17 +57,34 @@ const COPY_RESET_MS = 1600;
 export function ThemePlayground() {
   const [themeId, setThemeId] = useState<ThemeId>(DEFAULT_THEME_ID);
   const [axes, setAxes] = useState<AxisState>(DEFAULT_AXIS_STATE);
-  const [copied, setCopied] = useState(false);
+  const [query, setQuery] = useState("");
   const [accentHex, setAccentHex] = useState<string>(
     themeById(DEFAULT_THEME_ID).tokens["--accent"],
   );
+  const attrCopy = useCopyState(COPY_RESET_MS);
+  const varsCopy = useCopyState(COPY_RESET_MS);
+  const axisGroupId = useId();
   const previewRef = useRef<HTMLDivElement>(null);
+  const filterRef = useRef<HTMLInputElement>(null);
   const tileRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const copyTimer = useRef<number | undefined>(undefined);
   const theme = themeById(themeId);
-  const activeIndex = packIndexOf(theme.id);
+  const visiblePacks = useMemo(() => filterPacks(THEME_CATALOG, query), [query]);
+  const filtering = query.trim() !== "";
+  // Roving-tabindex anchor: the checked tile when visible, else the first
+  // tile so the group keeps a tab stop while the active pack is filtered out.
+  const checkedIndex = visiblePacks.findIndex((entry) => entry.id === theme.id);
+  const focusIndex = checkedIndex >= 0 ? checkedIndex : 0;
+  const surpriseDisabled =
+    visiblePacks.length === 0 || (visiblePacks.length === 1 && checkedIndex === 0);
   const SchemeIcon = theme.colorScheme === "dark" ? Moon : Sun;
   const snippet = packAttrSnippet(theme.id, axes);
+  const varsSnippet = cssVarSnippet(theme);
+  const copyFailed = attrCopy.state === "failed" || varsCopy.state === "failed";
+  const liveMessage = copyFailed
+    ? copy.status.failedLabel
+    : attrCopy.state === "copied" || varsCopy.state === "copied"
+      ? copy.status.copiedLabel
+      : "";
 
   useEffect(() => {
     const el = previewRef.current;
@@ -62,38 +92,45 @@ export function ThemePlayground() {
     // Resolved value, not the catalog entry — proves the wrapper repaints.
     const resolved = getComputedStyle(el).getPropertyValue("--accent").trim();
     setAccentHex(resolved || theme.tokens["--accent"]);
-  }, [themeId, theme]);
-
-  useEffect(() => () => window.clearTimeout(copyTimer.current), []);
+  }, [theme]);
 
   function selectPack(id: ThemeId, focus = false) {
     if (id !== themeId) {
       setThemeId(id);
     }
-    if (focus) tileRefs.current[packIndexOf(id)]?.focus();
+    if (focus) {
+      const at = visiblePacks.findIndex((entry) => entry.id === id);
+      if (at >= 0) tileRefs.current[at]?.focus();
+    }
   }
 
   function onPackKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
-    const next = nextPackIndex(activeIndex, event.key);
+    const next = nextPackIndex(focusIndex, event.key, visiblePacks.length);
     if (next === null) return;
     event.preventDefault();
-    selectPack(THEME_CATALOG[next]!.id, true);
+    selectPack(visiblePacks[next]!.id, true);
+  }
+
+  function onFilterKeyDown(event: ReactKeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Escape" && query !== "") {
+      event.preventDefault();
+      setQuery("");
+    }
+  }
+
+  function clearFilter() {
+    setQuery("");
+    filterRef.current?.focus();
+  }
+
+  function surpriseMe() {
+    const next = randomPackIndex(visiblePacks.length, checkedIndex);
+    if (next >= 0) selectPack(visiblePacks[next]!.id, true);
   }
 
   function setAxis<A extends keyof AxisState>(axis: A, value: AxisState[A]) {
     if (axes[axis] === value) return; // re-pressing the active chip is a no-op
     setAxes((current) => ({ ...current, [axis]: value }));
-  }
-
-  async function copyPackAttr() {
-    try {
-      await navigator.clipboard.writeText(snippet);
-    } catch {
-      return; // clipboard denied — the snippet stays selectable text
-    }
-    window.clearTimeout(copyTimer.current);
-    setCopied(true);
-    copyTimer.current = window.setTimeout(() => setCopied(false), COPY_RESET_MS);
   }
 
   return (
@@ -102,57 +139,112 @@ export function ThemePlayground() {
         <p className={styles.railLabel}>
           <Palette size={14} aria-hidden="true" />
           {copy.packGroupLabel}
-          <span className={styles.railCount}>{THEME_CATALOG.length}</span>
+          <span className={styles.railCount}>
+            {filtering
+              ? copy.filter.count
+                  .replace("{shown}", String(visiblePacks.length))
+                  .replace("{total}", String(THEME_CATALOG.length))
+              : THEME_CATALOG.length}
+          </span>
         </p>
-        <div
-          aria-label={copy.packGroupAria}
-          className={styles.packs}
-          onKeyDown={onPackKeyDown}
-          role="radiogroup"
-        >
-          {THEME_CATALOG.map((entry, index) => {
-            const swatch = packSwatch(entry);
-            const active = entry.id === theme.id;
-            return (
+        <div className={styles.railBar}>
+          <div className={styles.filterWrap} role="search">
+            <Search aria-hidden="true" className={styles.filterIcon} size={14} />
+            <input
+              aria-label={copy.filter.label}
+              autoComplete="off"
+              className={styles.filterInput}
+              onChange={(event) => setQuery(event.target.value)}
+              onKeyDown={onFilterKeyDown}
+              placeholder={copy.filter.placeholder}
+              ref={filterRef}
+              spellCheck={false}
+              type="search"
+              value={query}
+            />
+            {filtering ? (
               <button
-                aria-checked={active}
-                className={styles.packTile}
-                key={entry.id}
-                onClick={() => selectPack(entry.id)}
-                ref={(node) => {
-                  tileRefs.current[index] = node;
-                }}
-                role="radio"
-                tabIndex={active ? 0 : -1}
-                title={entry.description}
+                aria-label={copy.filter.clear}
+                className={styles.filterClear}
+                onClick={clearFilter}
                 type="button"
               >
-                <span
-                  aria-hidden="true"
-                  className={styles.tileArt}
-                  style={{ background: swatch.page, borderColor: swatch.border }}
-                >
-                  <i
-                    className={styles.tileRail}
-                    style={{ background: swatch.section, borderColor: swatch.border }}
-                  />
-                  <i className={styles.tileLine} style={{ background: swatch.ink }} />
-                  <i className={styles.tileKey} style={{ background: swatch.accent }} />
-                </span>
-                <span className={styles.tileName}>{entry.name}</span>
+                <X size={13} aria-hidden="true" />
               </button>
-            );
-          })}
+            ) : null}
+          </div>
+          <button
+            className={styles.surpriseBtn}
+            disabled={surpriseDisabled}
+            onClick={surpriseMe}
+            type="button"
+          >
+            <Dices size={14} aria-hidden="true" />
+            {copy.status.surprise}
+          </button>
         </div>
+        {visiblePacks.length === 0 ? (
+          <div className={styles.packEmpty}>
+            <p role="status">{copy.filter.empty.replace("{query}", query.trim())}</p>
+            <button className={styles.emptyClear} onClick={clearFilter} type="button">
+              {copy.filter.clear}
+            </button>
+          </div>
+        ) : (
+          <div
+            aria-label={copy.packGroupAria}
+            className={styles.packs}
+            onKeyDown={onPackKeyDown}
+            role="radiogroup"
+          >
+            {visiblePacks.map((entry, index) => {
+              const swatch = packSwatch(entry);
+              const active = entry.id === theme.id;
+              return (
+                <button
+                  aria-checked={active}
+                  className={styles.packTile}
+                  key={entry.id}
+                  onClick={() => selectPack(entry.id)}
+                  ref={(node) => {
+                    tileRefs.current[index] = node;
+                  }}
+                  role="radio"
+                  tabIndex={index === focusIndex ? 0 : -1}
+                  title={entry.description}
+                  type="button"
+                >
+                  <span
+                    aria-hidden="true"
+                    className={styles.tileArt}
+                    style={{ background: swatch.page, borderColor: swatch.border }}
+                  >
+                    <i
+                      className={styles.tileRail}
+                      style={{ background: swatch.section, borderColor: swatch.border }}
+                    />
+                    <i className={styles.tileLine} style={{ background: swatch.ink }} />
+                    <i className={styles.tileKey} style={{ background: swatch.accent }} />
+                  </span>
+                  <span className={styles.tileName}>{entry.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className={styles.axes}>
         {AXIS_IDS.map((axis) => (
           <div className={styles.axis} key={axis}>
-            <span className={styles.axisLabel} id={`tp-axis-${axis}`}>
+            <span className={styles.axisLabel} id={`${axisGroupId}-${axis}`}>
               {copy.axisLabels[axis]}
             </span>
-            <div aria-labelledby={`tp-axis-${axis}`} className={styles.chips} role="group">
+            <div
+              aria-labelledby={`${axisGroupId}-${axis}`}
+              className={styles.chips}
+              role="group"
+            >
               {axisOptions(axis).map((option) => (
                 <button
                   aria-pressed={axes[axis] === option.id}
@@ -184,10 +276,23 @@ export function ThemePlayground() {
           <MiniDashboard />
         </div>
         <div className={styles.stageFoot}>
-          <p className={styles.packMeta}>
-            <strong className={styles.packName}>{theme.name}</strong>
-            <span className={styles.packDesc}>{theme.description}</span>
-          </p>
+          <div className={styles.packMeta}>
+            <p className={styles.packMetaLine}>
+              <strong className={styles.packName}>{theme.name}</strong>
+              <span className={styles.packDesc}>{theme.description}</span>
+            </p>
+            <p className={styles.packAxes}>
+              {AXIS_IDS.map((axis) => {
+                const option = axisOptions(axis).find((entry) => entry.id === axes[axis]);
+                return (
+                  <span className={styles.axisBadge} key={axis} title={option?.description}>
+                    <span className={styles.axisBadgeKey}>{copy.axisLabels[axis]}</span>
+                    {option?.name ?? axes[axis]}
+                  </span>
+                );
+              })}
+            </p>
+          </div>
           <div className={styles.packReadout}>
             <span className={styles.schemeBadge}>
               <SchemeIcon size={12} aria-hidden="true" />
@@ -204,18 +309,42 @@ export function ThemePlayground() {
             <button
               aria-label={`${copy.status.copyLabel}: ${snippet}`}
               className={styles.copyChip}
-              onClick={() => void copyPackAttr()}
+              data-state={attrCopy.state}
+              onClick={() => void attrCopy.copy(snippet)}
               type="button"
             >
-              {copied ? (
+              {attrCopy.state === "copied" ? (
                 <Check size={13} aria-hidden="true" />
               ) : (
                 <Copy size={13} aria-hidden="true" />
               )}
-              <code>{copied ? copy.status.copiedLabel : snippet}</code>
+              <code>
+                {attrCopy.state === "copied"
+                  ? copy.status.copiedLabel
+                  : attrCopy.state === "failed"
+                    ? copy.status.failedLabel
+                    : snippet}
+              </code>
+            </button>
+            <button
+              className={styles.varsBtn}
+              data-state={varsCopy.state}
+              onClick={() => void varsCopy.copy(varsSnippet)}
+              type="button"
+            >
+              {varsCopy.state === "copied" ? (
+                <Check size={13} aria-hidden="true" />
+              ) : (
+                <Braces size={13} aria-hidden="true" />
+              )}
+              {varsCopy.state === "copied"
+                ? copy.status.copiedLabel
+                : varsCopy.state === "failed"
+                  ? copy.status.failedLabel
+                  : copy.status.copyVarsLabel}
             </button>
             <span aria-live="polite" className={styles.srOnly} role="status">
-              {copied ? copy.status.copiedLabel : ""}
+              {liveMessage}
             </span>
           </div>
         </div>

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, GitBranch } from "lucide-react";
+import { ArrowRight, Check, GitBranch } from "lucide-react";
 
 import { REPO_URL } from "../lib/site";
 import { TOOLS } from "../tools";
@@ -17,11 +17,13 @@ export default function HomePage() {
         <p className={styles.eyebrow}>Open source · MIT</p>
         <h1 className={styles.title}>Free, open-source tools for SaaS builders</h1>
         <p className={styles.lede}>
-          Four browser tools extracted from{" "}
+          Four single-purpose utilities for the jobs every SaaS rebuilds —
+          pricing pages, row level security, translation coverage, and
+          theming. Extracted from{" "}
           <a href="https://supastack.dev" target="_blank" rel="noopener noreferrer">
             supastack
-          </a>{" "}
-          — no signup, no tracking, everything runs locally in your browser.
+          </a>
+          , the SaaS starter kit.
         </p>
         <p className={styles.heroLinks}>
           <a
@@ -34,6 +36,17 @@ export default function HomePage() {
             supastack-tools on GitHub
           </a>
         </p>
+        <ul className={styles.reassurance} aria-label="What to expect">
+          <li>
+            <Check size={13} aria-hidden /> No signup
+          </li>
+          <li>
+            <Check size={13} aria-hidden /> Nothing uploaded
+          </li>
+          <li>
+            <Check size={13} aria-hidden /> MIT licensed
+          </li>
+        </ul>
       </header>
 
       <ul className={styles.grid} aria-label="Tools">
@@ -41,15 +54,29 @@ export default function HomePage() {
           const Icon = tool.icon;
           return (
             <li key={tool.slug}>
-              <Link className={styles.card} href={tool.href}>
-                <span className={styles.cardIcon} aria-hidden>
-                  <Icon size={18} strokeWidth={1.8} />
+              <Link
+                aria-labelledby={`tool-${tool.slug}`}
+                className={styles.card}
+                href={tool.href}
+              >
+                <div className={styles.cardHead}>
+                  <span className={styles.cardIcon} aria-hidden>
+                    <Icon size={18} strokeWidth={1.8} />
+                  </span>
+                  <h2 className={styles.cardTitle} id={`tool-${tool.slug}`}>
+                    {tool.title}
+                  </h2>
+                </div>
+                <span className={styles.cardTagline}>{tool.tagline}</span>
+                <ul className={styles.cardPoints}>
+                  {tool.points.map((point) => (
+                    <li key={point}>{point}</li>
+                  ))}
+                </ul>
+                <span className={styles.cardCta}>
+                  Open tool
+                  <ArrowRight size={14} aria-hidden />
                 </span>
-                <span className={styles.cardBody}>
-                  <span className={styles.cardTitle}>{tool.title}</span>
-                  <span className={styles.cardTagline}>{tool.tagline}</span>
-                </span>
-                <ArrowRight className={styles.cardArrow} size={16} aria-hidden />
               </Link>
             </li>
           );

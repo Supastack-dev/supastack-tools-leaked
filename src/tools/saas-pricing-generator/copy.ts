@@ -6,11 +6,11 @@
 export const pricingToolCopy = {
   metaTitle: "SaaS pricing page generator — build a table that converts",
   metaDescription:
-    "Design a SaaS pricing table live: tiers, monthly and annual pricing, a featured plan, feature lists — then copy the config JSON. Free, in your browser.",
+    "Design a SaaS pricing table live: tiers, monthly and annual pricing, a featured plan, feature lists — then copy the config JSON or a markdown table. Free, in your browser.",
 
   eyebrow: "Free tool",
   h1: "Free SaaS pricing page generator",
-  lead: "Design the pricing table your product deserves — tier names, monthly and annual prices, a featured plan, and feature lists — and watch it render exactly as customers will see it. Copy the config JSON when it converts.",
+  lead: "Design the pricing table your product deserves — tier names, taglines, monthly and annual prices, a featured plan, and feature lists — and watch it render exactly as customers will see it. Copy the config JSON or a markdown table when it converts.",
   nojsNote: "The live editor needs JavaScript. The advice below works either way.",
 
   controls: {
@@ -20,20 +20,35 @@ export const pricingToolCopy = {
     addTier: "Add tier",
     maxTiers: "Up to four tiers — enough for any honest pricing page.",
     removeTier: "Remove tier",
+    duplicateTier: "Duplicate tier",
+    moveUp: "Move up",
+    moveDown: "Move down",
     name: "Name",
     namePlaceholder: "Growth",
+    tagline: "Tagline",
+    taglinePlaceholder: "For teams shipping fast",
+    ctaLabel: "Button label",
+    ctaPlaceholder: "Get started",
     monthlyPrice: "Monthly price",
     annualPrice: "Annual price",
     annualAuto: "Auto",
     annualHelp: "Per year. Leave empty for monthly × 10 — the standard two-months-free deal.",
     features: "Features",
-    featuresPlaceholder: "One feature per line",
+    featuresPlaceholder: "One feature per line — start a line with - to mark it not included",
     featureThisTier: "Feature this tier",
     currency: "Currency",
+    priceSuffix: "Price unit",
     billing: "Preview billing",
     monthly: "Monthly",
     annual: "Annual",
     offerAnnual: "Offer annual billing",
+    pageCopy: "Page copy",
+    pageHeading: "Heading",
+    pageSubheading: "Subheading",
+    reset: "Reset to example",
+    share: "Copy share link",
+    shareCopied: "Link copied",
+    shareFailed: "Copy failed — copy the URL from the address bar",
     issues: {
       required: "Required",
       invalid: "Enter a number like 29 or 29.99",
@@ -46,7 +61,6 @@ export const pricingToolCopy = {
     heading: "Pricing",
     subheading: "Simple pricing that scales with you.",
     mostPopular: "Most popular",
-    perMonth: "/mo",
     billedAnnually: "billed annually",
     billedMonthly: "billed monthly",
     saveBadge: "Save {percent}%",
@@ -57,11 +71,12 @@ export const pricingToolCopy = {
   },
 
   copy: {
-    button: "Copy config JSON",
+    button: "Copy JSON",
+    buttonMarkdown: "Copy markdown",
     copied: "Copied",
     failed: "Copy failed — select the JSON below",
     details: "Config JSON",
-    hint: "Paste the config into your app's pricing table — it carries every tier, price, and computed saving.",
+    hint: "JSON for your pricing component, or a markdown table for docs and READMEs.",
   },
 
   sections: [

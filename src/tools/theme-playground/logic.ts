@@ -1,6 +1,6 @@
 import {
-  DEFAULT_THEME_ID,
   THEME_CATALOG,
+  THEME_TOKEN_NAMES,
   themeById,
   type ThemeDefinition,
   type ThemeId,
@@ -117,7 +117,51 @@ export function packAttrSnippet(id: string, axes: AxisState): string {
   return parts.join(" ");
 }
 
-export function packIndexOf(id: string): number {
-  const index = THEME_CATALOG.findIndex((theme) => theme.id === id);
-  return index >= 0 ? index : THEME_CATALOG.findIndex((theme) => theme.id === DEFAULT_THEME_ID);
+/**
+ * Pack-tile filter — case-insensitive substring match on the pack's name or
+ * summary. Blank queries pass the whole list through unchanged (same ref).
+ */
+export function filterPacks(
+  themes: readonly ThemeDefinition[],
+  query: string,
+): readonly ThemeDefinition[] {
+  const needle = query.trim().toLowerCase();
+  if (needle === "") return themes;
+  return themes.filter(
+    (theme) =>
+      theme.name.toLowerCase().includes(needle) ||
+      theme.description.toLowerCase().includes(needle),
+  );
+}
+
+/**
+ * Clipboard payload — the pack as pasteable CSS custom properties, one
+ * declaration per line (mirrors the generated pack stylesheet, color-scheme
+ * included).
+ */
+export function cssVarSnippet(theme: ThemeDefinition): string {
+  const lines = THEME_TOKEN_NAMES.map((name) => `${name}: ${theme.tokens[name]};`);
+  lines.push(`color-scheme: ${theme.colorScheme};`);
+  return lines.join("\n");
+}
+
+/**
+ * "Surprise me" — a uniform pick among the packs that are NOT the current
+ * one. `rng` returns [0, 1) and is injectable so tests stay deterministic.
+ */
+export function randomPackIndex(
+  count: number,
+  currentIndex: number,
+  rng: () => number = Math.random,
+): number {
+  if (count <= 0) return -1;
+  if (count === 1) return 0;
+  const current = Math.floor(currentIndex);
+  if (current < 0 || current >= count) {
+    // No valid current index — every slot is a different pack already.
+    return Math.min(Math.max(Math.floor(rng() * count), 0), count - 1);
+  }
+  // Pick uniformly from the count-1 "other" slots, then skip past `current`.
+  const pick = Math.min(Math.max(Math.floor(rng() * (count - 1)), 0), count - 2);
+  return pick < current ? pick : pick + 1;
 }

@@ -238,11 +238,13 @@
 .tierActions {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 6px;
 }
 
 .featureToggle,
-.removeBtn {
+.iconBtn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -258,14 +260,20 @@
   padding: 4px 12px;
 }
 
-.removeBtn {
+.tierOps {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.iconBtn {
   width: 32px;
   padding: 0;
   border-radius: var(--radius-control);
 }
 
 .featureToggle:hover:not(:disabled),
-.removeBtn:hover:not(:disabled) {
+.iconBtn:hover:not(:disabled) {
   color: var(--text);
   border-color: var(--border-strong);
 }
@@ -277,9 +285,16 @@
 }
 
 .featureToggle:disabled,
-.removeBtn:disabled {
+.iconBtn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+.pageCopy {
+  display: grid;
+  gap: 6px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border);
 }
 
 .priceRow {
@@ -342,7 +357,43 @@
   background: var(--accent-fill-hover, var(--accent-hover));
 }
 
+.ghostBtn,
+.resetBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.resetBtn {
+  width: 44px;
+  padding: 0;
+  color: var(--muted);
+}
+
+.ghostBtn:hover,
+.resetBtn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.ghostBtn[data-state="copied"] {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  color: var(--accent);
+}
+
 .copyStatus {
+  margin: 0;
   color: var(--muted);
   font-size: 0.8125rem;
 }
@@ -503,6 +554,14 @@
   min-height: 1.3em;
 }
 
+.tierTagline {
+  margin: -8px 0 0;
+  color: var(--muted);
+  font-size: 0.78125rem;
+  line-height: 1.45;
+  min-height: 1.15em;
+}
+
 .priceLine {
   display: flex;
   align-items: baseline;
@@ -573,6 +632,20 @@
   color: var(--accent);
 }
 
+.featList li[data-excluded] {
+  color: var(--muted);
+}
+
+.featList li[data-excluded] svg {
+  color: var(--muted);
+  opacity: 0.75;
+}
+
+.featList li[data-excluded] > span {
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--muted) 55%, transparent);
+}
+
 .emptyFeat {
   color: var(--muted);
 }
@@ -594,6 +667,18 @@
   border: 0;
   background: var(--accent-fill, var(--accent));
   color: var(--accent-fill-ink, var(--accent-ink));
+}
+
+.srOnly {
+  border: 0;
+  clip: rect(0 0 0 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
 }
 
 /* ---------- responsive / motion ---------- */
@@ -621,7 +706,9 @@
   .chip,
   .addBtn,
   .featureToggle,
-  .removeBtn,
+  .iconBtn,
+  .ghostBtn,
+  .resetBtn,
   .copyBtn {
     transition:
       color 150ms,

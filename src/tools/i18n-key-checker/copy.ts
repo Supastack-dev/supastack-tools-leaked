@@ -45,9 +45,21 @@ export const copy = {
     targetHint: "Paste the locale you are about to ship.",
     loadExample: "Load example pair",
     clear: "Clear",
+    swap: "Swap locales",
+    openFile: "Open file…",
     copyMissing: "Copy missing keys",
+    copyStub: "Copy stub JSON",
+    downloadStub: "Download stub",
+    downloadReport: "Download report",
     copied: "Copied",
     copyFailed: "Copy failed — select the keys and copy them manually",
+    filterPlaceholder: "Filter issues by key…",
+    filterClear: "Clear filter",
+    filterEmpty: "No issues match the filter.",
+    panePlaceholder: '{"nav": {"home": "Home"}}',
+    rootKey: "(root)",
+    coverage: (covered: number, total: number, percent: number) =>
+      `${covered} of ${total} keys covered · ${percent}%`,
     collisionWarn: (paths: readonly string[]) =>
       `Two entries flatten to the same key ${paths.map((path) => `\`${path}\``).join(", ")} — the later value wins.`,
     keys: (count: number) => `${count} ${count === 1 ? "key" : "keys"}`,
@@ -78,6 +90,10 @@ export const copy = {
       emptyTarget: {
         label: "Empty translations",
         unit: ["empty value", "empty values"],
+      },
+      identicalTarget: {
+        label: "Identical to base",
+        unit: ["identical string", "identical strings"],
       },
       placeholderMismatch: {
         label: "Dropped placeholders",

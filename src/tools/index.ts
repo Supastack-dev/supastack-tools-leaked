@@ -13,6 +13,8 @@ export type ToolEntry = {
   title: string;
   /** One-line outcome shown on the hub card. */
   tagline: string;
+  /** Short capability bullets shown under the tagline on the hub card. */
+  points: readonly string[];
   icon: LucideIcon;
 };
 
@@ -22,6 +24,11 @@ export const TOOLS: readonly ToolEntry[] = [
     href: "/saas-pricing-generator",
     title: "SaaS Pricing Page Generator",
     tagline: "Design a pricing table that converts — tiers, annual discounts, featured plan.",
+    points: [
+      "Up to four tiers, monthly and annual billing",
+      "Featured plan, taglines, excluded features",
+      "Export config JSON or a markdown table",
+    ],
     icon: Tags,
   },
   {
@@ -29,6 +36,11 @@ export const TOOLS: readonly ToolEntry[] = [
     href: "/supabase-rls-generator",
     title: "Supabase RLS Policy Generator",
     tagline: "Answer a few questions, get ready-to-run row level security SQL.",
+    points: [
+      "Seven presets — owner-only to full lockdown",
+      "Per-operation toggles, FORCE RLS, DROP POLICY",
+      "Commented SQL — copy or download as .sql",
+    ],
     icon: ShieldCheck,
   },
   {
@@ -36,6 +48,11 @@ export const TOOLS: readonly ToolEntry[] = [
     href: "/i18n-key-checker",
     title: "i18n Key Checker",
     tagline: "Diff two locale JSON files and find missing or extra translation keys.",
+    points: [
+      "Missing, extra, empty, and untranslated keys",
+      "Catches dropped {placeholder} and ICU variables",
+      "Coverage %, translator stub, markdown report",
+    ],
     icon: Languages,
   },
   {
@@ -43,6 +60,11 @@ export const TOOLS: readonly ToolEntry[] = [
     href: "/theme-playground",
     title: "Theme Playground",
     tagline: "Preview every supastack theme pack and preset on a live interface.",
+    points: [
+      "12 color packs plus density, radius, and font",
+      "Subtree-scoped data-theme preview on a live app",
+      "Filter packs — copy attributes or CSS variables",
+    ],
     icon: Palette,
   },
 ];

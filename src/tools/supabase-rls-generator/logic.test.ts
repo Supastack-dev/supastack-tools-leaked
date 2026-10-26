@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { highlightLine, highlightSql } from "./highlight";
 import {
   buildRlsSql,
   getPreset,
@@ -65,23 +66,31 @@ describe("isValidIdentifier", () => {
 });
 
 describe("presets", () => {
-  it("exposes the five documented presets", () => {
+  it("exposes the seven documented presets", () => {
     expect(RLS_PRESETS.map((preset) => preset.id)).toEqual([
       "owner",
       "team",
+      "team-write",
       "public-read",
       "authenticated-read",
+      "public-insert",
       "locked-down",
     ]);
     for (const preset of RLS_PRESETS) {
       expect(getPreset(preset.id)).toBe(preset);
       expect(preset.token).toMatch(/^[a-z]+$/);
+      // Every preset must declare which ops it can emit, with its defaults
+      // inside that set.
+      for (const op of preset.defaultOperations) {
+        expect(preset.allowedOperations).toContain(op);
+      }
     }
   });
 
-  it("defaults to all four operations except the locked-down preset", () => {
+  it("defaults to all four operations except insert-only and locked-down presets", () => {
     for (const preset of RLS_PRESETS) {
-      const expected = preset.id === "locked-down" ? [] : RLS_OPERATIONS;
+      const expected =
+        preset.id === "locked-down" ? [] : preset.id === "public-insert" ? ["insert"] : RLS_OPERATIONS;
       expect(preset.defaultOperations).toEqual(expected);
     }
   });
@@ -203,7 +212,7 @@ describe("buildRlsSql — operation toggles", () => {
     if (!result.ok) throw new Error("expected ok");
     expect(result.sql).not.toContain("for update to");
     expect(result.sql).not.toContain("for delete to");
-    expect(result.sql).toContain("no update or delete policy");
+    expect(result.sql).toContain("No update or delete policy");
   });
 
   it("keeps canonical select/insert/update/delete order regardless of input order", () => {
@@ -259,5 +268,132 @@ describe("buildRlsSql — validation", () => {
     expect(result.sql).toContain('"posts"."user_id"');
     expect(RLS_DEFAULTS.schema).toBe("public");
     expect(RLS_DEFAULTS.ownerColumn).toBe("user_id");
+  });
+});
+
+describe("buildRlsSql — team-write preset", () => {
+  const teamWrite = input({
+    preset: "team-write",
+    membershipTable: "workspace_membership",
+    workspaceColumn: "workspace_id",
+    memberColumn: "user_id",
+  });
+
+  it("guards reads and writes by membership, not just ownership", () => {
+    const result = buildRlsSql(teamWrite);
+    if (!result.ok) throw new Error("expected ok");
+    expect(result.sql).toContain('create policy "posts_select_teamwrite"');
+    expect(result.sql).toContain('create policy "posts_delete_teamwrite"');
+    // update carries the membership check on both sides.
+    expect(result.sql).toContain("for update to authenticated\nusing (exists (");
+    // insert requires ownership AND membership.
+    expect(result.sql).toContain('with check ((auth.uid() = "posts"."user_id") and\nexists (');
+  });
+});
+
+describe("buildRlsSql — public-insert preset", () => {
+  it("emits exactly one insert policy open to anon and authenticated", () => {
+    const result = buildRlsSql(input({ preset: "public-insert" }));
+    if (!result.ok) throw new Error("expected ok");
+    expect(result.sql).toContain('create policy "posts_insert_publicinsert"');
+    expect(result.sql).toContain("for insert to anon, authenticated\nwith check (true)");
+    expect(result.statements).toHaveLength(2); // alter + insert policy
+    expect(result.sql).toContain("No select, update or delete policy");
+  });
+
+  it("refuses to emit other operations even when requested", () => {
+    const result = buildRlsSql(
+      input({ preset: "public-insert", operations: [...RLS_OPERATIONS] }),
+    );
+    if (!result.ok) throw new Error("expected ok");
+    expect(result.sql).not.toContain("for select");
+    expect(result.sql).not.toContain("for update");
+    expect(result.sql).not.toContain("for delete");
+    expect(result.statements).toHaveLength(2);
+  });
+
+  it("needs no owner column — there is nothing to read back", () => {
+    const result = buildRlsSql(input({ preset: "public-insert", ownerColumn: "" }));
+    expect(result.ok).toBe(true);
+  });
+});
+
+describe("buildRlsSql — force + drop options", () => {
+  it("emits force row level security after enable when asked", () => {
+    const result = buildRlsSql(input({ force: true }));
+    if (!result.ok) throw new Error("expected ok");
+    expect(result.sql).toContain(
+      'alter table "public"."posts" force row level security;',
+    );
+    expect(result.sql).toContain("the owner role bypasses");
+    // enable precedes force; force precedes the first policy.
+    const enableAt = result.sql.indexOf("enable row level security;");
+    const forceAt = result.sql.indexOf("force row level security;");
+    const policyAt = result.sql.indexOf("create policy");
+    expect(forceAt).toBeGreaterThan(enableAt);
+    expect(policyAt).toBeGreaterThan(forceAt);
+  });
+
+  it("keeps force off by default", () => {
+    const result = buildRlsSql(input());
+    if (!result.ok) throw new Error("expected ok");
+    expect(result.sql).not.toContain("force row level security");
+  });
+
+  it("emits drop policy if exists before each create when asked", () => {
+    const result = buildRlsSql(input({ dropExisting: true }));
+    if (!result.ok) throw new Error("expected ok");
+    expect(result.sql).toContain(
+      'drop policy if exists "posts_select_owner" on "public"."posts";',
+    );
+    expect(result.sql.match(/drop policy if exists/g)).toHaveLength(4);
+    // Each drop lands directly above its create.
+    const dropAt = result.sql.indexOf('drop policy if exists "posts_select_owner"');
+    const createAt = result.sql.indexOf('create policy "posts_select_owner"');
+    expect(createAt).toBeGreaterThan(dropAt);
+  });
+
+  it("applies both options together", () => {
+    const result = buildRlsSql(input({ force: true, dropExisting: true }));
+    if (!result.ok) throw new Error("expected ok");
+    expect(result.sql).toContain("force row level security");
+    expect(result.sql).toContain("drop policy if exists");
+  });
+});
+
+describe("highlightSql", () => {
+  it("marks whole comment lines and keeps line count", () => {
+    const lines = highlightSql("-- hello\nalter table t enable row level security;");
+    expect(lines).toHaveLength(2);
+    expect(lines[0]).toEqual([{ text: "-- hello", kind: "comment" }]);
+  });
+
+  it("classifies keywords, quoted identifiers, roles and literals", () => {
+    const kinds = (text: string) => highlightLine(text).map((t) => `${t.kind}:${t.text}`);
+    expect(kinds('create policy "p" on "public"."posts" for select to authenticated')).toEqual(
+      expect.arrayContaining([
+        "keyword:create",
+        "keyword:policy",
+        'ident:"p"',
+        'ident:"public"',
+        'ident:"posts"',
+        "keyword:for",
+        "keyword:select",
+        "keyword:to",
+        "role:authenticated",
+      ]),
+    );
+    expect(kinds("with check (true)")).toEqual(
+      expect.arrayContaining(["keyword:with", "keyword:check", "literal:true"]),
+    );
+    expect(kinds("using (auth.uid() = t.id)")).toEqual(
+      expect.arrayContaining(["keyword:using", "func:auth.uid"]),
+    );
+  });
+
+  it("keeps comment tails inline after real tokens", () => {
+    const tokens = highlightLine('alter table "t" enable row level security; -- go');
+    expect(tokens.at(-1)).toEqual({ text: "-- go", kind: "comment" });
+    expect(tokens.some((t) => t.kind === "keyword")).toBe(true);
   });
 });

@@ -1,10 +1,27 @@
 "use client";
 
-import { Check, Copy, FileCode, Lock, SlidersHorizontal, TriangleAlert } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import {
+  Check,
+  Copy,
+  Download,
+  FileCode,
+  Globe,
+  Inbox,
+  KeyRound,
+  Lock,
+  SlidersHorizontal,
+  TriangleAlert,
+  UserRound,
+  Users,
+  UsersRound,
+  type LucideIcon,
+} from "lucide-react";
+import { useState } from "react";
 
-import { FormSelect } from "../../components/form-select";
+import { downloadText } from "../../lib/download";
+import { useCopyState } from "../../lib/use-copy-state";
 import { copy } from "./copy";
+import { highlightSql } from "./highlight";
 import {
   buildRlsSql,
   getPreset,
@@ -17,36 +34,15 @@ import {
 } from "./logic";
 import styles from "./tool.module.css";
 
-type CopyState = "idle" | "copied" | "failed";
-
-/** Menu labels come straight from the preset registry — they can't drift. */
-const PRESET_OPTIONS: ReadonlyArray<{ value: RlsPresetId; label: string }> =
-  RLS_PRESETS.map((preset) => ({ value: preset.id, label: preset.label }));
-
-async function writeClipboard(text: string): Promise<boolean> {
-  try {
-    if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(text);
-      return true;
-    }
-  } catch {
-    // Fall through to the textarea path (permissions policy, older engines).
-  }
-  try {
-    const area = document.createElement("textarea");
-    area.value = text;
-    area.setAttribute("readonly", "");
-    area.style.position = "fixed";
-    area.style.opacity = "0";
-    document.body.appendChild(area);
-    area.select();
-    const ok = document.execCommand("copy");
-    area.remove();
-    return ok;
-  } catch {
-    return false;
-  }
-}
+const PRESET_ICONS: Record<RlsPresetId, LucideIcon> = {
+  owner: UserRound,
+  team: Users,
+  "team-write": UsersRound,
+  "public-read": Globe,
+  "authenticated-read": KeyRound,
+  "public-insert": Inbox,
+  "locked-down": Lock,
+};
 
 function Field({
   error,
@@ -96,13 +92,13 @@ export function RlsGeneratorTool() {
   const [workspaceColumn, setWorkspaceColumn] = useState<string>(RLS_DEFAULTS.workspaceColumn);
   const [memberColumn, setMemberColumn] = useState<string>(RLS_DEFAULTS.memberColumn);
   const [operations, setOperations] = useState<readonly RlsOperation[]>(RLS_OPERATIONS);
-  const [copyState, setCopyState] = useState<CopyState>("idle");
-  const copyTimer = useRef<number | undefined>(undefined);
-
-  useEffect(() => () => window.clearTimeout(copyTimer.current), []);
+  const [force, setForce] = useState(true);
+  const [dropExisting, setDropExisting] = useState(false);
+  const copyState = useCopyState(1600);
 
   const preset = getPreset(presetId);
   const locked = presetId === "locked-down";
+  const needsOwner = preset.requiredFields.includes("ownerColumn");
   const result = buildRlsSql({
     table,
     preset: presetId,
@@ -112,6 +108,8 @@ export function RlsGeneratorTool() {
     membershipTable,
     workspaceColumn,
     memberColumn,
+    force,
+    dropExisting,
   });
   const fieldError = (field: RlsField): string | undefined =>
     result.ok ? undefined : result.errors.find((error) => error.field === field)?.message;
@@ -123,18 +121,18 @@ export function RlsGeneratorTool() {
   }
 
   function toggleOp(op: RlsOperation) {
+    if (!preset.allowedOperations.includes(op)) return;
     const enabled = !operations.includes(op);
     setOperations((prev) => (enabled ? [...prev, op] : prev.filter((item) => item !== op)));
   }
 
-  async function onCopy() {
+  function downloadSql() {
     if (!result.ok) return;
-    const ok = await writeClipboard(result.sql);
-    setCopyState(ok ? "copied" : "failed");
-    if (!ok) return;
-    window.clearTimeout(copyTimer.current);
-    copyTimer.current = window.setTimeout(() => setCopyState("idle"), 1600);
+    const name = table.trim() || "table";
+    downloadText(`rls_${name}_${presetId}.sql`, result.sql, "application/sql");
   }
+
+  const blockedOps = RLS_OPERATIONS.filter((op) => !preset.allowedOperations.includes(op));
 
   return (
     <div className={styles.tool}>
@@ -144,22 +142,29 @@ export function RlsGeneratorTool() {
           <h2 id="rls-controls">{copy.tool.controlsTitle}</h2>
         </div>
         <div className={styles.fields}>
-          <div className={styles.field}>
-            <span className={styles.label}>{copy.tool.presetLabel}</span>
-            <FormSelect<RlsPresetId>
-              defaultValue={presetId}
-              label={copy.tool.presetLabel}
-              name="preset"
-              nativeClassName={styles.selectNative}
-              onValueChange={applyPreset}
-              options={PRESET_OPTIONS}
-              pickerClassName={styles.selectPicker}
-              triggerClassName={styles.selectTrigger}
-            />
-            <p className={styles.fieldHint} data-tone="muted">
-              {preset.summary}
-            </p>
-          </div>
+          <fieldset className={styles.ops}>
+            <legend>{copy.tool.presetLabel}</legend>
+            <div className={styles.presetList}>
+              {RLS_PRESETS.map((entry) => {
+                const Icon = PRESET_ICONS[entry.id];
+                return (
+                  <label className={styles.presetCard} key={entry.id}>
+                    <input
+                      checked={presetId === entry.id}
+                      name="rls-preset"
+                      onChange={() => applyPreset(entry.id)}
+                      type="radio"
+                    />
+                    <Icon aria-hidden />
+                    <span className={styles.presetText}>
+                      <strong>{entry.label}</strong>
+                      <span>{entry.summary}</span>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
 
           <div className={styles.fieldRow}>
             <Field
@@ -178,7 +183,7 @@ export function RlsGeneratorTool() {
             />
           </div>
 
-          {!locked && (
+          {needsOwner && (
             <Field
               error={fieldError("ownerColumn")}
               id="rls-owner"
@@ -188,7 +193,7 @@ export function RlsGeneratorTool() {
             />
           )}
 
-          {presetId === "team" && (
+          {(presetId === "team" || presetId === "team-write") && (
             <div className={styles.teamFields}>
               <p className={styles.teamFieldsTitle}>{copy.tool.teamTitle}</p>
               <Field
@@ -217,27 +222,65 @@ export function RlsGeneratorTool() {
             </div>
           )}
 
+          {!locked && (
+            <fieldset className={styles.ops}>
+              <legend>{copy.tool.operationsLabel}</legend>
+              <div className={styles.opRow}>
+                {RLS_OPERATIONS.map((op) => {
+                  const allowed = preset.allowedOperations.includes(op);
+                  return (
+                    <label
+                      className={styles.op}
+                      data-blocked={!allowed || undefined}
+                      key={op}
+                      title={allowed ? undefined : copy.tool.opBlockedHint}
+                    >
+                      <input
+                        checked={allowed && operations.includes(op)}
+                        disabled={!allowed}
+                        onChange={() => toggleOp(op)}
+                        type="checkbox"
+                      />
+                      {op}
+                    </label>
+                  );
+                })}
+              </div>
+              {blockedOps.length > 0 && (
+                <p className={styles.lockNote}>
+                  <Lock aria-hidden />
+                  {copy.tool.opsBlockedNote}
+                </p>
+              )}
+            </fieldset>
+          )}
+
           <fieldset className={styles.ops}>
-            <legend>{copy.tool.operationsLabel}</legend>
-            <div className={styles.opRow}>
-              {RLS_OPERATIONS.map((op) => (
-                <label className={styles.op} key={op}>
-                  <input
-                    checked={operations.includes(op)}
-                    disabled={locked}
-                    onChange={() => toggleOp(op)}
-                    type="checkbox"
-                  />
-                  {op}
-                </label>
-              ))}
+            <legend>{copy.tool.advancedLabel}</legend>
+            <div className={styles.advList}>
+              <label className={styles.adv}>
+                <input
+                  checked={force}
+                  onChange={(event) => setForce(event.target.checked)}
+                  type="checkbox"
+                />
+                <span>
+                  <strong>{copy.tool.forceLabel}</strong>
+                  {copy.tool.forceHint}
+                </span>
+              </label>
+              <label className={styles.adv}>
+                <input
+                  checked={dropExisting}
+                  onChange={(event) => setDropExisting(event.target.checked)}
+                  type="checkbox"
+                />
+                <span>
+                  <strong>{copy.tool.dropLabel}</strong>
+                  {copy.tool.dropHint}
+                </span>
+              </label>
             </div>
-            {locked && (
-              <p className={styles.lockNote}>
-                <Lock aria-hidden />
-                {copy.tool.lockedNote}
-              </p>
-            )}
           </fieldset>
         </div>
       </section>
@@ -254,20 +297,30 @@ export function RlsGeneratorTool() {
           )}
           <button
             className={styles.copyBtn}
-            data-state={copyState}
+            disabled={!result.ok}
+            onClick={downloadSql}
+            title={copy.tool.downloadLabel}
+            type="button"
+          >
+            <Download aria-hidden />
+            <span className={styles.copyBtnLabel}>{copy.tool.downloadLabel}</span>
+          </button>
+          <button
+            className={styles.copyBtn}
+            data-state={copyState.state}
             disabled={!result.ok}
             onClick={() => {
-              void onCopy();
+              if (result.ok) void copyState.copy(result.sql);
             }}
             type="button"
           >
-            {copyState === "copied" ? <Check aria-hidden /> : <Copy aria-hidden />}
-            {copyState === "copied" ? copy.tool.copiedLabel : copy.tool.copyLabel}
+            {copyState.state === "copied" ? <Check aria-hidden /> : <Copy aria-hidden />}
+            {copyState.state === "copied" ? copy.tool.copiedLabel : copy.tool.copyLabel}
           </button>
           <span aria-live="polite" className={styles.srOnly}>
-            {copyState === "copied"
+            {copyState.state === "copied"
               ? copy.tool.copiedLabel
-              : copyState === "failed"
+              : copyState.state === "failed"
                 ? copy.tool.failedLabel
                 : ""}
           </span>
@@ -275,14 +328,17 @@ export function RlsGeneratorTool() {
         {result.ok ? (
           <div className={styles.codeScroll}>
             <div className={styles.code} role="code">
-              {result.sql.split("\n").map((line, index) => (
-                <div
-                  className={styles.codeLine}
-                  data-comment={line.startsWith("--") || undefined}
-                  // Lines shift with input — index is the stable frame here.
-                  key={index}
-                >
-                  <span>{line === "" ? " " : line}</span>
+              {highlightSql(result.sql).map((tokens, index) => (
+                <div className={styles.codeLine} key={index}>
+                  <span>
+                    {tokens.length === 0
+                      ? " "
+                      : tokens.map((token, t) => (
+                          <span data-hl={token.kind} key={t}>
+                            {token.text}
+                          </span>
+                        ))}
+                  </span>
                 </div>
               ))}
             </div>
@@ -296,7 +352,7 @@ export function RlsGeneratorTool() {
             </div>
           </div>
         )}
-        {copyState === "failed" ? (
+        {copyState.state === "failed" ? (
           <p className={styles.copyFail} role="alert">
             {copy.tool.failedLabel}
           </p>

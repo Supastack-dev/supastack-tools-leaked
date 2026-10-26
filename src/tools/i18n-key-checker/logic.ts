@@ -160,6 +160,8 @@ export type LocaleDiff = Readonly<{
   typeMismatch: LocaleTypeMismatch[];
   /** Target string is blank while the base string has content. */
   emptyTarget: string[];
+  /** Target string is byte-identical to base — often an untranslated key. */
+  identicalTarget: string[];
   /** Base `{var}` tokens that did not survive into the target string. */
   placeholderMismatch: LocalePlaceholderMismatch[];
   /** Both arrays but different lengths — content drift is expected, size is not. */
@@ -173,6 +175,7 @@ export function diffLocales(base: FlattenedLocale, target: FlattenedLocale): Loc
   const extra: string[] = [];
   const typeMismatch: LocaleTypeMismatch[] = [];
   const emptyTarget: string[] = [];
+  const identicalTarget: string[] = [];
   const placeholderMismatch: LocalePlaceholderMismatch[] = [];
   const arrayMismatch: LocaleArrayMismatch[] = [];
 
@@ -199,6 +202,8 @@ export function diffLocales(base: FlattenedLocale, target: FlattenedLocale): Loc
       const targetText = targetEntry.value as string;
       if (targetText.trim() === "" && baseText.trim() !== "") {
         emptyTarget.push(key);
+      } else if (targetText === baseText && baseText.trim() !== "") {
+        identicalTarget.push(key);
       }
       const targetVars = extractPlaceholders(targetText);
       const missingVars = extractPlaceholders(baseText).filter(
@@ -216,10 +221,126 @@ export function diffLocales(base: FlattenedLocale, target: FlattenedLocale): Loc
   missing.sort(byKey);
   extra.sort(byKey);
   emptyTarget.sort(byKey);
+  identicalTarget.sort(byKey);
   typeMismatch.sort((a, b) => byKey(a.key, b.key));
   placeholderMismatch.sort((a, b) => byKey(a.key, b.key));
   arrayMismatch.sort((a, b) => byKey(a.key, b.key));
-  return { missing, extra, typeMismatch, emptyTarget, placeholderMismatch, arrayMismatch };
+  return {
+    missing,
+    extra,
+    typeMismatch,
+    emptyTarget,
+    identicalTarget,
+    placeholderMismatch,
+    arrayMismatch,
+  };
+}
+
+/** Total rows the diff surfaced — used for the headline count. */
+export function issueTotal(diff: LocaleDiff): number {
+  return (
+    diff.missing.length +
+    diff.extra.length +
+    diff.typeMismatch.length +
+    diff.emptyTarget.length +
+    diff.identicalTarget.length +
+    diff.placeholderMismatch.length +
+    diff.arrayMismatch.length
+  );
+}
+
+/**
+ * Share of base keys the target answers with the right type — missing keys
+ * and type mismatches are uncovered; everything else counts.
+ */
+export function coverageRatio(baseCount: number, diff: LocaleDiff): number {
+  if (baseCount === 0) return 1;
+  const uncovered = diff.missing.length + diff.typeMismatch.length;
+  return Math.max(0, Math.min(1, (baseCount - uncovered) / baseCount));
+}
+
+/** Case-insensitive key filter over every diff category. */
+export function filterDiff(diff: LocaleDiff, query: string): LocaleDiff {
+  const q = query.trim().toLowerCase();
+  if (q === "") return diff;
+  const keep = (key: string) => key.toLowerCase().includes(q);
+  return {
+    missing: diff.missing.filter(keep),
+    extra: diff.extra.filter(keep),
+    emptyTarget: diff.emptyTarget.filter(keep),
+    identicalTarget: diff.identicalTarget.filter(keep),
+    typeMismatch: diff.typeMismatch.filter((item) => keep(item.key)),
+    placeholderMismatch: diff.placeholderMismatch.filter((item) => keep(item.key)),
+    arrayMismatch: diff.arrayMismatch.filter((item) => keep(item.key)),
+  };
+}
+
+/**
+ * Rebuilds a nested locale object holding just the missing keys, values
+ * copied from the base — a paste-ready starter file for the translator.
+ * `{"auth.cta": "Start"}` becomes `{auth: {cta: "Start"}}`.
+ */
+export function missingStub(
+  base: FlattenedLocale,
+  keys: readonly string[],
+): Record<string, unknown> {
+  const root: Record<string, unknown> = {};
+  for (const key of keys) {
+    const entry = base.get(key);
+    if (!entry) continue;
+    const parts = key === "" ? [""] : key.split(".");
+    let node = root;
+    for (const part of parts.slice(0, -1)) {
+      const next = node[part];
+      if (!isPlainObject(next)) node[part] = {};
+      node = node[part] as Record<string, unknown>;
+    }
+    node[parts[parts.length - 1]!] = entry.value;
+  }
+  return root;
+}
+
+/** Markdown report of the diff — GitHub-issue ready. */
+export function diffMarkdown(
+  diff: LocaleDiff,
+  labels: Readonly<{ base: string; target: string }>,
+): string {
+  const lines: string[] = [
+    "# i18n coverage report",
+    "",
+    `**${labels.base} → ${labels.target}** — ${issueTotal(diff)} issue${
+      issueTotal(diff) === 1 ? "" : "s"
+    }`,
+  ];
+  const section = (title: string, rows: readonly string[]) => {
+    if (rows.length === 0) return;
+    lines.push("", `## ${title} (${rows.length})`, "");
+    for (const row of rows) lines.push(`- ${row}`);
+  };
+  section("Missing keys", diff.missing.map((key) => `\`${key}\``));
+  section(
+    "Type mismatches",
+    diff.typeMismatch.map(
+      (item) => `\`${item.key}\` — ${item.baseType} → ${item.targetType}`,
+    ),
+  );
+  section(
+    "Dropped placeholders",
+    diff.placeholderMismatch.map(
+      (item) =>
+        `\`${item.key}\` — missing ${item.missingVars.map((v) => `{${v}}`).join(", ")}`,
+    ),
+  );
+  section(
+    "Array length drift",
+    diff.arrayMismatch.map(
+      (item) => `\`${item.key}\` — ${item.baseLength} → ${item.targetLength} items`,
+    ),
+  );
+  section("Empty translations", diff.emptyTarget.map((key) => `\`${key}\``));
+  section("Identical to base", diff.identicalTarget.map((key) => `\`${key}\``));
+  section("Extra keys", diff.extra.map((key) => `\`${key}\``));
+  return `${lines.join("\n")}\n`;
 }
 
 export type ParseLocaleResult =

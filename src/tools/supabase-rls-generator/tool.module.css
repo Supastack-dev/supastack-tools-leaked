@@ -81,6 +81,7 @@
 .panelHead {
   align-items: center;
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 18px;
 }
@@ -162,29 +163,110 @@
   color: var(--muted);
 }
 
-/* FormSelect must fill the field column like the text inputs. */
-.selectPicker {
-  min-width: 0;
-  width: 100%;
+/* Preset radio cards — native inputs give keyboard + SR semantics for
+   free; the card itself is the hit target. */
+.presetList {
+  display: grid;
+  gap: 8px;
 }
 
-.selectTrigger {
-  background: var(--page);
-  font-size: 0.875rem;
-  min-height: 42px;
-  padding: 5px 12px;
-}
-
-.selectNative {
-  background: var(--page);
+.presetCard {
+  align-items: flex-start;
   border: 1px solid var(--border);
   border-radius: var(--radius-control);
+  cursor: pointer;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: 10px 12px;
+  transition:
+    border-color 150ms var(--ease),
+    background-color 150ms var(--ease);
+}
+
+.presetCard input {
+  height: 1px;
+  opacity: 0;
+  position: absolute;
+  width: 1px;
+}
+
+.presetCard > svg {
+  color: var(--muted);
+  flex-shrink: 0;
+  height: 16px;
+  margin-top: 2px;
+  width: 16px;
+}
+
+.presetText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.presetText strong {
+  font-size: 0.8125rem;
+  font-weight: 550;
+}
+
+.presetText span {
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.presetCard:hover {
+  border-color: var(--border-strong);
+}
+
+.presetCard:has(input:checked) {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.presetCard:has(input:checked) > svg {
+  color: var(--accent);
+}
+
+.presetCard:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Advanced checkboxes — same grammar as the op chips, stacked. */
+.advList {
+  display: grid;
+  gap: 10px;
+}
+
+.adv {
+  align-items: flex-start;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  font-size: 0.8125rem;
+  gap: 9px;
+  line-height: 1.5;
+}
+
+.adv strong {
   color: var(--text);
-  font: inherit;
-  font-size: 0.875rem;
-  min-height: 42px;
-  padding: 0 12px;
-  width: 100%;
+  font-weight: 550;
+}
+
+.adv input {
+  accent-color: var(--accent);
+  flex-shrink: 0;
+  height: 15px;
+  margin-top: 2px;
+  width: 15px;
+}
+
+.adv:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .teamFields {
@@ -271,8 +353,12 @@
 }
 
 .op:has(input:disabled) {
-  cursor: default;
+  cursor: not-allowed;
   opacity: 0.45;
+}
+
+.op[data-blocked] {
+  border-style: dashed;
 }
 
 .lockNote {
@@ -389,9 +475,29 @@
   white-space: pre;
 }
 
-.codeLine[data-comment="true"] > span {
+/* SQL highlighting — a small palette on shared tokens: keywords ride the
+   accent, quoted identifiers stay text, roles/literals take the warning
+   hue, comments fall back to muted italic. */
+.codeLine [data-hl="comment"] {
   color: color-mix(in srgb, var(--muted) 82%, transparent);
   font-style: italic;
+}
+
+.codeLine [data-hl="keyword"] {
+  color: var(--accent);
+}
+
+.codeLine [data-hl="func"] {
+  color: var(--accent-hover);
+}
+
+.codeLine [data-hl="role"],
+.codeLine [data-hl="literal"] {
+  color: var(--warning, var(--accent-hover));
+}
+
+.codeLine [data-hl="ident"] {
+  color: var(--text);
 }
 
 .notice {
@@ -583,6 +689,9 @@
   }
   .fieldRow {
     grid-template-columns: minmax(0, 1fr);
+  }
+  .copyBtnLabel {
+    display: none;
   }
   .explainer,
   .cta {

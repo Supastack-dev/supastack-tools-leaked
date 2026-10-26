@@ -176,6 +176,176 @@
     0 0 0 4px var(--accent);
 }
 
+/* ---- rail toolbar (filter + surprise) ---------------------------------- */
+
+.railBar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 12px;
+}
+
+.filterWrap {
+  align-items: center;
+  display: flex;
+  flex: 1 1 190px;
+  min-width: 0;
+  position: relative;
+}
+
+.filterIcon {
+  color: var(--muted);
+  left: 11px;
+  pointer-events: none;
+  position: absolute;
+}
+
+.filterInput {
+  background: var(--section);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  caret-color: var(--accent);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.8rem;
+  height: 36px;
+  min-width: 0;
+  padding: 0 34px 0 32px;
+  transition: border-color 140ms;
+  width: 100%;
+}
+
+.filterInput::placeholder {
+  color: var(--muted);
+}
+
+.filterInput::-webkit-search-cancel-button,
+.filterInput::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+}
+
+.filterInput:hover {
+  border-color: var(--border-strong);
+}
+
+.filterInput:focus-visible {
+  border-color: var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.filterClear {
+  align-items: center;
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+  height: 24px;
+  justify-content: center;
+  padding: 0;
+  position: absolute;
+  right: 6px;
+  transition:
+    background-color 140ms,
+    color 140ms;
+  width: 24px;
+}
+
+.filterClear:hover {
+  background: var(--hover-fill);
+  color: var(--text);
+}
+
+.filterClear:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.surpriseBtn {
+  align-items: center;
+  background: var(--section);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-control);
+  color: var(--text);
+  cursor: pointer;
+  display: inline-flex;
+  flex: none;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  gap: 7px;
+  height: 36px;
+  padding: 0 14px;
+  transition:
+    border-color 150ms,
+    color 150ms;
+}
+
+.surpriseBtn svg {
+  color: var(--accent);
+}
+
+.surpriseBtn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.surpriseBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.surpriseBtn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.packEmpty {
+  align-items: center;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-card);
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 0.82rem;
+  gap: 6px 10px;
+  justify-content: center;
+  margin: 0;
+  padding: 24px 16px;
+  text-align: center;
+}
+
+.packEmpty p {
+  margin: 0;
+}
+
+.emptyClear {
+  background: none;
+  border: 0;
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  padding: 0;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  text-underline-offset: 3px;
+}
+
+.emptyClear:hover {
+  color: var(--accent-hover);
+}
+
+.emptyClear:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .packTile:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
@@ -937,11 +1107,45 @@
 }
 
 .packMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  min-width: 0;
+}
+
+.packMetaLine {
   align-items: baseline;
   display: flex;
   gap: 10px;
   margin: 0;
   min-width: 0;
+}
+
+.packAxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 0;
+}
+
+.axisBadge {
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--muted);
+  display: inline-flex;
+  font-size: 0.64rem;
+  gap: 5px;
+  padding: 2px 8px;
+}
+
+.axisBadgeKey {
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  opacity: 0.75;
+  text-transform: uppercase;
 }
 
 .packName {
@@ -983,6 +1187,10 @@
 .copyChip code {
   font-family: var(--font-mono);
   font-size: inherit;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .hexDot {
@@ -1003,6 +1211,7 @@
   font-family: var(--font-mono);
   font-size: 0.7rem;
   gap: 7px;
+  max-width: 100%;
   min-height: 30px;
   padding: 4px 10px;
   transition:
@@ -1018,6 +1227,45 @@
 .copyChip:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+.copyChip[data-state="failed"] {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.varsBtn {
+  align-items: center;
+  background: var(--raised);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  color: var(--text);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.72rem;
+  font-weight: 600;
+  gap: 7px;
+  min-height: 30px;
+  padding: 4px 10px;
+  transition:
+    border-color 150ms,
+    color 150ms;
+  white-space: nowrap;
+}
+
+.varsBtn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.varsBtn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.varsBtn[data-state="failed"] {
+  border-color: var(--danger);
+  color: var(--danger);
 }
 
 /* ---- explainer + CTA (page sections) ---------------------------------- */
@@ -1194,6 +1442,10 @@
   .tileName,
   .chip,
   .copyChip,
+  .varsBtn,
+  .surpriseBtn,
+  .filterInput,
+  .filterClear,
   .ctaButton,
   .toggle,
   .toggle::before,

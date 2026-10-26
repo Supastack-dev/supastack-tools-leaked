@@ -1,11 +1,13 @@
 import {
   ArrowRight,
   Globe,
+  Inbox,
   KeyRound,
   Lock,
   ShieldCheck,
   UserRound,
   Users,
+  UsersRound,
   type LucideIcon,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -20,8 +22,10 @@ import styles from "./tool.module.css";
 const PRESET_ICONS: Record<RlsPresetId, LucideIcon> = {
   owner: UserRound,
   team: Users,
+  "team-write": UsersRound,
   "public-read": Globe,
   "authenticated-read": KeyRound,
+  "public-insert": Inbox,
   "locked-down": Lock,
 };
 
