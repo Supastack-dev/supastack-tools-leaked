@@ -33,7 +33,7 @@ export default function HomePage() {
             rel="noopener noreferrer"
           >
             <GitBranch size={14} aria-hidden />
-            supastack-tools on GitHub
+            supastack-tools-leaked on GitHub
           </a>
         </p>
         <ul className={styles.reassurance} aria-label="What to expect">
