@@ -1,0 +1,332 @@
+.grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: minmax(320px, 1fr) minmax(0, 1.15fr);
+  align-items: start;
+}
+
+.card,
+.result {
+  background: var(--raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card, 16px);
+  padding: 1.75rem;
+  box-shadow: 0 2px 12px -2px rgba(0, 0, 0, 0.04);
+}
+
+.cardTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 1.75rem;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.field {
+  display: grid;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.fieldLabel,
+.groupLabel {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.group {
+  border: 0;
+  padding: 0;
+  margin: 0 0 1.5rem;
+}
+
+.inputWrap {
+  display: inline-flex;
+  align-items: center;
+  background: var(--page);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control, 10px);
+  padding: 0 12px;
+  height: 40px;
+  box-sizing: border-box;
+  width: fit-content;
+  max-width: 10rem;
+  overflow: hidden;
+  transition:
+    border-color 150ms var(--ease),
+    box-shadow 150ms var(--ease);
+}
+
+.inputWrap:hover {
+  border-color: var(--border-strong);
+}
+
+.inputWrap:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.currencyPrefix,
+.currencySuffix {
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  user-select: none;
+  line-height: 1;
+}
+
+.currencyPrefix {
+  margin-right: 4px;
+}
+
+.currencySuffix {
+  margin-left: 4px;
+}
+
+.input {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: textfield;
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  outline: none !important;
+  outline-offset: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  color: var(--text);
+  width: 3.5rem;
+  height: 100%;
+  box-sizing: border-box;
+  font-variant-numeric: tabular-nums;
+}
+
+.input:focus,
+.input:focus-visible {
+  outline: none !important;
+  outline-offset: 0 !important;
+  box-shadow: none !important;
+}
+
+.input::-webkit-outer-spin-button,
+.input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  margin-top: 0.25rem;
+}
+
+/* Platform choice buttons: 2x2 grid for 4 platforms (Next.js, TanStack, Expo, Tauri) */
+.platformsList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0.625rem 0 0.5rem;
+}
+
+/* Module choice buttons: 2 columns */
+.modulesGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0.625rem 0 0.5rem;
+}
+
+.choiceButton {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control, 10px);
+  background: var(--page);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.8125rem;
+  text-align: left;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    border-color 140ms var(--ease),
+    background 140ms var(--ease),
+    color 140ms var(--ease),
+    transform 100ms var(--ease);
+}
+
+.choiceButton:hover:not(:disabled) {
+  border-color: var(--border-strong);
+  color: var(--text);
+  background: color-mix(in srgb, var(--text) 4%, var(--page));
+}
+
+.choiceButton:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+.choiceButton[data-checked="true"] {
+  background: color-mix(in srgb, var(--accent) 9%, var(--page));
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  color: var(--text);
+}
+
+.choiceButton[data-checked="true"]:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--page));
+}
+
+.choiceButton:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.choiceButton:disabled {
+  opacity: 0.8;
+  cursor: default;
+}
+
+.indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  border: 1.5px solid var(--border-strong);
+  background: transparent;
+  color: transparent;
+  transition: all 120ms var(--ease);
+}
+
+.choiceButton[data-checked="true"] .indicator {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink, #0e0d0b);
+}
+
+.choiceButton:disabled .indicator {
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
+  background: color-mix(in srgb, var(--accent) 60%, var(--border));
+  color: var(--accent-ink, #0e0d0b);
+}
+
+.choiceLabel {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.stats {
+  display: grid;
+  gap: 0.875rem;
+  margin: 0 0 2rem;
+}
+
+.stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control, 10px);
+  background: var(--page);
+}
+
+.stat dt {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.stat dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.statAccent {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--page));
+}
+
+.statAccent dt,
+.statAccent dd {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.tableWrap {
+  overflow-x: auto;
+  margin-top: 0.5rem;
+}
+
+.tableCaption {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text);
+  text-align: left;
+  margin: 0 0 0.875rem;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: 0.625rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.table thead th {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.table tbody tr:hover {
+  background: color-mix(in srgb, var(--text) 3%, transparent);
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 540px) {
+  .platformsList {
+    grid-template-columns: 1fr;
+  }
+  .modulesGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .choiceButton,
+  .inputWrap,
+  .indicator {
+    transition: none !important;
+    transform: none !important;
+  }
+}

@@ -17,8 +17,8 @@ export default function HomePage() {
         <p className={styles.eyebrow}>Open source · MIT</p>
         <h1 className={styles.title}>Free, open-source tools for SaaS builders</h1>
         <p className={styles.lede}>
-          Four single-purpose utilities for the jobs every SaaS rebuilds —
-          pricing pages, row level security, translation coverage, and
+          Five single-purpose utilities for the jobs every SaaS rebuilds —
+          build cost estimation, pricing pages, row level security, translation coverage, and
           theming. Extracted from{" "}
           <a href="https://supastack.dev" target="_blank" rel="noopener noreferrer">
             supastack

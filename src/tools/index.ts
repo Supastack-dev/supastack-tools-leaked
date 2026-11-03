@@ -1,4 +1,4 @@
-import { Languages, Palette, ShieldCheck, Tags, type LucideIcon } from "lucide-react";
+import { Hammer, Languages, Palette, ShieldCheck, Tags, type LucideIcon } from "lucide-react";
 
 /**
  * Registry for the / hub — the single place a new tool registers. The hub
@@ -19,6 +19,18 @@ export type ToolEntry = {
 };
 
 export const TOOLS: readonly ToolEntry[] = [
+  {
+    slug: "saas-build-cost-calculator",
+    href: "/saas-build-cost-calculator",
+    title: "SaaS Build Cost Calculator",
+    tagline: "Estimate the hours and money a from-scratch build costs vs starting with a kit.",
+    points: [
+      "Select modules: auth, billing, db, teams, jobs, email, storage, i18n...",
+      "Platforms: Next.js, TanStack Start, Expo mobile, and Tauri desktop",
+      "Interactive hourly rate and cost breakdown table",
+    ],
+    icon: Hammer,
+  },
   {
     slug: "saas-pricing-generator",
     href: "/saas-pricing-generator",
